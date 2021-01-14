@@ -4,49 +4,7 @@
 
 from enum import Enum
 from DipTraceUnits import *
-
-
-class DipTraceComponentPartType(Enum):
-	Normal      = 0
-	PowerAndGnd = 1
-	NetPorts    = 2
-
-class DipTracePinType(Enum):
-	Undefined    =  0
-	Dot          =  1
-	PolarityIn   =  2
-	PolarityOut  =  3
-	NonLogic     =  4
-	Open         =  5
-	OpenHigh     =  6
-	OpenLow      =  7
-	ThreeState   =  8
-	Hysteresis   =  9
-	Amplyfier    = 10
-	Postponed    = 11
-	Shift        = 12
-	Clock        = 13
-	Generator    = 14
-
-class DipTracePinElectric(Enum):
-	Undefined     = 0
-	Passive       = 1
-	Input         = 2
-	Output        = 3
-	Bidirectional = 4
-	OpenHigh      = 6
-	OpenLow       = 7
-	PassiveHigh   = 6
-	PassiveLow    = 7
-	ThreeState    = 8
-	Power         = 9
-
-class DipTracePinOrientation(Enum):
-	Right   = 0
-	Top     = 1
-	Left    = 2
-	Bottom  = 3
-
+from DipTracePatternLibrary import *
 
 class DipTracePin:
 
@@ -85,6 +43,11 @@ class DipTracePin:
 		self.orientation = orientation
 		return self
 
+	def setPosition(self, x=0.0, y=0.0):
+		self.x = mm2units(x)
+		self.y = mm2units(y)
+		return self
+
 	def setLength(self, length=3.81):
 		self.length = mm2units(length)
 		return self
@@ -92,7 +55,7 @@ class DipTracePin:
 
 
 	def __str__(self):
-		result  = '            (Pin {1} 8.5725 -30.48\n'.format(self, '{1}')
+		result  = '            (Pin {1} {0.x} {0.y}\n'.format(self, '{1}')
 		result += '              (Enabled "{0.locked}")\n'.format(self)
 		result += '              (Locked "{0.enabled}")\n'.format(self)
 		result += '              (Type {0.type.value})\n'.format(self)
@@ -120,11 +83,11 @@ class DipTracePin:
 
 class DipTraceComponentPart:
 
-	def __init__(self, name, type=DipTraceComponentPartType.Normal, ref=''):
+	def __init__(self, name, type=DipTraceComponentPartType.Normal):
 		self.name           = name
-		self.ref            = ref
 		self.type           = type
 		self.pins           = []
+		self.shapes         = []
 		self.setType()
 		self.setEnabled()
 		self.setOrigin()
@@ -143,6 +106,13 @@ class DipTraceComponentPart:
 		self.pins.append(pin)
 		return self
 
+	def addShape(self, shape):
+		if type(shape) is list:
+			self.shapes.extend(shape)
+		else:
+			self.shapes.append(shape)
+		return self
+
 	def setShowNumbers(self, state=True):
 		self.show_numbers = 1 if state else 0
 		return self
@@ -159,7 +129,7 @@ class DipTraceComponentPart:
 
 	def __str__(self):
 
-		result  = '        (Part "{1}" "{0.ref}"\n'.format(self, '{0.component_name}')
+		result  = '        (Part "{0.name}" "{0.ref}"\n'
 		result += '          (Enabled "{0.enabled}")\n'.format(self)
 		result += '          (PartType {0.type.value})\n'.format(self)
 		result += '          (PartName "{0.name}")\n'.format(self)
@@ -188,27 +158,45 @@ class DipTraceComponentPart:
 		result += '          (Verification "N" "N" "N" "N" "N" "N" "N")\n'
 
 		if len(self.pins):
+			i = 0
 			result += '          (Pins\n'
-			for pin in self.pins: result += str(pin)
+			for pin in self.pins:
+				result += str(pin).format(self, i)
+				i += 1
 			result += '          )\n'
+
+		if len(self.shapes):
+			result += '          (Shapes\n'
+			i = 0
+			for shape in self.shapes:
+				result += str(shape).format(i)
+				i += 1
+			result += '          )\n'
+
+		result += '        )\n'
 
 		return result
 
 class DipTraceComponent:
 
-	def __init__(self, name, value=None):
+	def __init__(self, name, ref='', value=None):
 		self.name   = name
 		self.value  = value or name
+		self.ref    = ref
 		self.parts  = []
 
 	def addPart(self, part):
 		self.parts.append(part)
 		return self
 
+	def setPattern(self, pattern):
+		self.pattern = pattern
+		return self
+
 	def __str__(self):
-		result = ''
-		result += '      (Component\n'
-		for part in self.parts: result = str(part)
+		result  = '      (Component\n'
+		for part in self.parts: result += str(part).format(self)
+		if self.pattern: result += str(self.pattern)
 		result += '      )\n'
 		return result
 
@@ -226,8 +214,9 @@ class DipTraceComponentLibrary:
 		return self
 
 	def __str__(self):
-		result = ''
-		result += '(Source "DipTrace-ElementLibrary" 28)\n'
+		DipTracePattern.isComponent = True # Fix for DipTracePattern
+
+		result  = '(Source "DipTrace-ElementLibrary" 28)\n'
 		result += '  (Library\n'
 		result += '    (Name "{0.name}")\n'.format(self)
 		result += '    (Hint "{0.hint}")\n'.format(self)
@@ -245,7 +234,6 @@ class DipTraceComponentLibrary:
 		result += '()\n'
 
 		return result
-
 
 	def save(self, filename):
 		with open(filename, 'w', encoding='utf-8') as f:
