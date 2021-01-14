@@ -3,13 +3,8 @@
 
 
 from enum import Enum
+from DipTraceUnits import *
 
-
-def mm2units(value):
-	return value*3
-
-def units2mm(value):
-	return value/3
 
 class DipTraceHoleTypes(Enum):
 	Round     = 0

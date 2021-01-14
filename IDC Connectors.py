@@ -4,13 +4,24 @@
 import math
 from copy import deepcopy
 from DipTracePatternLibrary import *
+from DipTraceComponentLibrary import *
 
 
 class IDC_Connectors:
 
 	def __init__(self, name, pins):
-		self.library = DipTracePatternLibrary(name)
 		self.pins = pins
+		self.name = name
+
+	def save(self, filename):
+		self.library.save(filename)
+
+
+class IDC_Connectors_Pattern(IDC_Connectors):
+
+	def __init__(self, name, pins):
+		self.library = DipTracePatternLibrary(name)
+		super().__init__(name, pins)
 
 	def terminal(self):
 		return DipTraceTerminal() \
@@ -101,5 +112,36 @@ class IDC_Connectors:
 		self.save(filename)
 
 
+class IDC_Connectors_Component(IDC_Connectors):
+
+	def __init__(self, name, pins):
+		self.library = DipTraceComponentLibrary(name)
+		super().__init__(name, pins)
+
+	def pin(self, pin_number):
+		pin = DipTracePin(pin_number)
+		return pin
+
+	def part(self, pin_count, number):
+		part = DipTraceComponentPart('Part {0}'.format(number), 'J')
+
+		for pin in range(number, pin_count, 2):
+			part.addPin(self.pin(pin))
+
+		return part
+
+	def component(self, pin_count):
+		component = DipTraceComponent('BH-{0}'.format(pin_count))
+		for i in range(2): component.addPart(self.part(pin_count, i))
+		return component
+
+	def run(self, filename):
+		for pin_count in self.pins:
+			self.library.addComponent(self.component(pin_count))
+
+		self.save(filename)
+
+
 if __name__ == "__main__":
-	IDC_Connectors('IDC Connectors', [6, 8, 10, 14, 16, 20, 24, 26, 34, 40, 50, 60, 64]).run('IDC Connectors.asc')
+	IDC_Connectors_Pattern('IDC Connectors', [6, 8, 10, 14, 16, 20, 24, 26, 34, 40, 50, 60, 64]).run('IDC Connectors Pattern.asc')
+	IDC_Connectors_Component('IDC Connectors', [6, 8, 10, 14, 16, 20, 24, 26, 34, 40, 50, 60, 64]).run('IDC Connectors Component.asc')
