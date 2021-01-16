@@ -65,6 +65,11 @@ class DipTraceTerminal:
 		self.setSize()
 		self.setCorner()
 
+	def move(self, x=0.0, y=0.0):
+		self.x += mm2units( x )
+		self.y += mm2units( y )
+		return self
+
 	def setSize(self, width=0.0, height=0.0):
 		self.width  = mm2units( width )
 		self.height = mm2units( height )
@@ -126,6 +131,11 @@ class DipTracePad:
 	def setPosition(self, x=0.0, y=0.0):
 		self.x = mm2units( x )
 		self.y = mm2units( y )
+		return self
+
+	def move(self, x=0.0, y=0.0):
+		self.x += mm2units( x )
+		self.y += mm2units( y )
 		return self
 
 	def setSize(self, width=0.0, height=0.0):
@@ -193,7 +203,6 @@ class DipTracePad:
 		result += '            (PadMask_EdgeGap {0.mask_edge_gap})\n'.format(self)
 		result += '            (PadMask_SegmentGap {0.mask_segment_gap})\n'.format(self)
 		result += '            (PadMask_SegmentSide {0.mask_segment_side})\n'.format(self)
-		
 		result += '            (PadMask_TopSegments {0}\n'.format(len(self.mask_top_segments))
 		# TODO: add top segments
 		result += '            )\n'
@@ -203,8 +212,6 @@ class DipTracePad:
 		result += '            (PadTerminalCount {0}\n'.format(len(self.terminals))
 		for terminal in self.terminals: result += str(terminal)
 		result += '            )\n'
-
-
 		result += '          )\n'
 
 		return result
@@ -237,6 +244,11 @@ class DipTracePattern:
 			self.shapes.extend(shape)
 		else:
 			self.shapes.append(shape)
+		return self
+
+	def move(self, x=0.0, y=0.0):
+		for pad in self.pads: pad.move(x, y)
+		for shape in self.shapes: shape.move(x, y)
 		return self
 
 	def add3dModel(self, model):

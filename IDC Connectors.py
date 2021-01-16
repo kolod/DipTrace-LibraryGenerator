@@ -23,8 +23,8 @@ class IDC_Connectors:
 		.setShape(DipTraceTerminalShapes.Rectangle) \
 		.setSize(0.64, 0.64)
 
-	def model(self, pins):
-		return DipTrace3dModel('BH-{0:02}.STEP'.format(pins)) \
+	def model(self, pins, isR=False):
+		return DipTrace3dModel('BH{1}-{0:02}.STEP'.format(pins, 'R' if isR else '')) \
 			.setRotation(90.0)
 
 	def pattern_shape(self, pins):
@@ -51,10 +51,6 @@ class IDC_Connectors:
 			.addPoint(middle + 2.5, bottom - 0.5) \
 			.addPoint(middle + 2.5, bottom      )
 
-		shape_03 = DipTracePatternShape(DipTraceShapeType.Line) \
-			.addPoint(left , bottom - 2.0) \
-			.addPoint(left + 2.0 , bottom)
-
 		shape_04 = DipTracePatternShape(DipTraceShapeType.Poligon) \
 			.addPoint(0.0         , bottom + 1.0) \
 			.addPoint(triag       , bottom + 3.0) \
@@ -65,7 +61,39 @@ class IDC_Connectors:
 			deepcopy(shape_02).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
 			deepcopy(shape_04).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
 			deepcopy(shape_01).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
-			deepcopy(shape_03).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
+			deepcopy(shape_02).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
+			deepcopy(shape_01).setLineWidth(0.05).setLayer(DipTraceLayer.TopCourtyard)
+		]
+
+	def pattern_shape_r(self, pins):
+		C        = 2.54 * int(pins/2 - 1)
+		A        = C + 10.14
+		top      = 0.32 - 13.8
+		bottom   = top + 9.0
+		left     = (C-A)/2
+		right    = (C+A)/2
+		middle   = C/2
+		triag    = 2 / math.sqrt(3)
+
+		shape_01 = DipTracePatternShape(DipTraceShapeType.Rectangle) \
+			.addPoint(right, top) \
+			.addPoint(left, bottom)
+
+		shape_02 = DipTracePatternShape(DipTraceShapeType.Poliline) \
+			.addPoint(middle - 2.5, top         ) \
+			.addPoint(middle - 2.5, top    + 0.5) \
+			.addPoint(left   + 0.5, top    + 0.5) \
+			.addPoint(left   + 0.5, bottom - 0.5) \
+			.addPoint(right  - 0.5, bottom - 0.5) \
+			.addPoint(right  - 0.5, top    + 0.5) \
+			.addPoint(middle + 2.5, top    + 0.5) \
+			.addPoint(middle + 2.5, top         )
+
+		return [
+			deepcopy(shape_01).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
+			deepcopy(shape_02).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
+			deepcopy(shape_01).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
+			deepcopy(shape_02).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
 			deepcopy(shape_01).setLineWidth(0.05).setLayer(DipTraceLayer.TopCourtyard)
 		]
 
@@ -84,18 +112,24 @@ class IDC_Connectors:
 		pad.addTerminal(self.terminal())
 		return pad
 
-	def pattern(self, pin_count):
+	def pattern(self, pin_count, isR=False):
 		C = 2.54 * int(pin_count/2 - 1)
 		A = C + 10.14
 
-		pattern = DipTracePattern('BH-{}'.format(pin_count), 'J')
+		pattern = DipTracePattern('BH{1}-{0:02}'.format(pin_count, 'R' if isR else ''), 'J')
 		pattern.setSize(A, 8.4)
 
 		for pin in range(pin_count):
 			pattern.addPad(self.pad(pin))
 
-		pattern.addShape(self.pattern_shape(pin_count))
-		pattern.add3dModel(self.model(pin_count))
+		if isR:
+			pattern.addShape(self.pattern_shape_r(pin_count))
+		else:
+			pattern.addShape(self.pattern_shape(pin_count))
+
+		pattern.add3dModel(self.model(pin_count, isR))
+
+		pattern.move(-(pin_count/2-1)*1.27, 1.27)
 
 		return pattern
 
@@ -144,8 +178,8 @@ class IDC_Connectors:
 
 		return part
 
-	def component(self, pin_count):
-		component = DipTraceComponent('BH-{0}'.format(pin_count), 'J')
+	def component(self, pin_count, isR=False):
+		component = DipTraceComponent('BH{1}-{0:02}'.format(pin_count, 'R' if isR else ''), 'J')
 		for i in range(2): component.addPart(self.component_part(pin_count, i))
 		return component
 
@@ -153,6 +187,12 @@ class IDC_Connectors:
 		for pin_count in self.pins:
 			p = self.pattern(pin_count)
 			c = self.component(pin_count).setPattern(p)
+			self.patternlibrary.addPattern(p)
+			self.componentLibrary.addComponent(c)
+
+		for pin_count in self.pins:
+			p = self.pattern(pin_count, True)
+			c = self.component(pin_count, True).setPattern(p)
 			self.patternlibrary.addPattern(p)
 			self.componentLibrary.addComponent(c)
 

@@ -13,6 +13,11 @@ class DipTracePoint:
 		self.x = mm2units( x )
 		self.y = mm2units( y )
 
+	def move(self, x=0.0, y=0.0):
+		self.x += mm2units( x )
+		self.y += mm2units( y )
+		return self
+
 	def __str__(self):
 		return '                (pt {0.x:.5g} {0.y:.5g})\n'.format(self)
 
@@ -53,6 +58,11 @@ class DipTraceComponentShape:
 		self.points.append(DipTracePoint(x, y))
 		return self
 
+	def move(self, x=0.0, y=0.0):
+		for point in self.points:
+			point.move(x, y)
+		return self
+
 	def setText(self, text=''):
 		self.text = text
 		return self
@@ -60,14 +70,14 @@ class DipTraceComponentShape:
 	def setTextAlign(self, align=DipTraceTextAlign.Center):
 		self.text_align = align
 		return self
-		
+
 	def setFont(self, font='Tahoma', size=8, spacing=1.2, angle=0.0):
 		self.font         = font
 		self.font_size    = size
 		self.text_spacing = spacing
 		self.text_angle   = angle
 		return self
-		
+
 	def setVector(self, state=True):
 		self.vector = 'Y' if state else 'N'
 		return self
@@ -108,7 +118,7 @@ class DipTraceComponentShape:
 			result += '              (Points_New\n'
 			for point in self.points: result += str(point)
 			result += '              )\n'
-			
+
 		result += '            )\n'
 
 		return result

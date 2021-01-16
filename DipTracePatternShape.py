@@ -12,6 +12,11 @@ class DipTracePoint:
 		self.x = mm2units( x )
 		self.y = mm2units( y )
 
+	def move(self, x=0.0, y=0.0):
+		self.x += mm2units( x )
+		self.y += mm2units( y )
+		return self
+
 	def __str__(self):
 		return '              (pt {0.x:.5g} {0.y:.5g})\n'.format(self)
 
@@ -51,6 +56,11 @@ class DipTracePatternShape:
 		self.points.append(DipTracePoint(x, y))
 		return self
 
+	def move(self, x=0.0, y=0.0):
+		for point in self.points:
+			point.move(x, y)
+		return self
+
 	def setText(self, text='', font='Tahoma', vector=True, size=8, align=DipTraceTextAlign.Left, angle=0.0, spacing=1.2, horizontal=0, vertical=0):
 		self.text         = text
 		self.font         = font
@@ -83,7 +93,7 @@ class DipTracePatternShape:
 
 		return result
 
-	
+
 	def __str__(self):
 		result  = '          (Shape {0.shape.value} "{0.locked}" 0 -0.5 -0.5 0.5 0.5 0 0 "{0.text}" "{0.font}" "{0.vector}" {0.font_size} 0 0 0 {0.line_width} 0)\n'.format(self)
 		result += '            (Width -1)\n'
