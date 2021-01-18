@@ -137,3 +137,5 @@ dmypy.json
 *.eli
 *.dip
 *.7z
+/Examples
+/3d_models/Renders

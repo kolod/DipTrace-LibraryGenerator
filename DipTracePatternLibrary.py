@@ -178,7 +178,7 @@ class DipTracePad:
 		self.mask_bottom_segments = segments
 		return self
 
-	def addTerminal(self, terminal):
+	def addTerminal(self, terminal:DipTraceTerminal):
 		self.terminals.append(terminal)
 		return self
 
@@ -221,7 +221,7 @@ class DipTracePattern:
 
 	isComponent = False
 
-	def __init__(self, name, ref=None, value=None):
+	def __init__(self, name, ref:str=None, value:str=None):
 		self.name   = name
 		self.ref    = ref
 		self.value  = value or name
@@ -236,7 +236,10 @@ class DipTracePattern:
 		return self
 
 	def addPad(self, pad):
-		self.pads.append(pad)
+		if type(pad) is list:
+			self.pads.extend(pad)
+		else:
+			self.pads.append(pad)
 		return self
 
 	def addShape(self, shape):
@@ -251,7 +254,7 @@ class DipTracePattern:
 		for shape in self.shapes: shape.move(x, y)
 		return self
 
-	def add3dModel(self, model):
+	def add3dModel(self, model:DipTrace3dModel):
 		self.model = model
 		return self
 
@@ -259,7 +262,7 @@ class DipTracePattern:
 		self.variableParameter = vars or ['N', 'N', 'N', 'N', 'N']
 		return self
 
-	def __str__(self):
+	def __str__(self) -> str:
 		result = ''
 		result +='      (Pattern "{0.name}" "{0.ref}"\n'.format(self)
 		result +='        (Value "{0.value}")\n'.format(self)
@@ -281,9 +284,9 @@ class DipTracePattern:
 
 		if len(self.shapes):
 			result += '        (Shapes\n'
-			result += str(DipTracePatternShape(DipTraceShapeType.Null).setGroup(0))
+			result += str(DipTracePatternShape(DipTracePatternShapeType.Null).setGroup(0))
 			for shape in self.shapes: result += str(shape)
-			result += str(DipTracePatternShape(DipTraceShapeType.Null).setGroup(0))
+			result += str(DipTracePatternShape(DipTracePatternShapeType.Null).setGroup(0))
 			result += '        )\n'
 
 		if self.model:
@@ -296,17 +299,17 @@ class DipTracePattern:
 
 class DipTracePatternLibrary:
 
-	def __init__(self, name, hint=None):
+	def __init__(self, name:str, hint=None):
 
 		self.name = name
 		self.hint = hint or name
 		self.patterns = []
 
-	def addPattern(self, pattern):
+	def addPattern(self, pattern:DipTracePattern):
 		self.patterns.append(pattern)
 		return self
 
-	def __str__(self):
+	def __str__(self) -> str:
 		DipTracePattern.isComponent = False # Fix for DipTracePattern
 
 		result  = '(Source "DipTrace-ComLibrary" 21)\n'
@@ -328,7 +331,7 @@ class DipTracePatternLibrary:
 		return result
 
 
-	def save(self, filename):
+	def save(self, filename:str) -> None:
 		with open(filename, 'w', encoding='utf-8') as f:
 			f.write(str(self))
 

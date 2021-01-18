@@ -83,7 +83,7 @@ class DipTracePin:
 
 class DipTraceComponentPart:
 
-	def __init__(self, name, type=DipTraceComponentPartType.Normal):
+	def __init__(self, name:str, type:DipTraceComponentPartType=DipTraceComponentPartType.Normal):
 		self.name           = name
 		self.type           = type
 		self.pins           = []
@@ -94,16 +94,19 @@ class DipTraceComponentPart:
 		self.setSize()
 		self.setShowNumbers()
 
-	def setType(self, type=DipTraceComponentPartType.Normal):
+	def setType(self, type:DipTraceComponentPartType=DipTraceComponentPartType.Normal):
 		self.type = type
 		return self
 
-	def setEnabled(self, state=True):
+	def setEnabled(self, state:bool=True):
 		self.enabled = 'Y' if state else 'N'
 		return self
 
-	def addPin(self, pin):
-		self.pins.append(pin)
+	def addPin(self, pin:DipTracePin):
+		if type(pin) is list:
+			self.pins.extend(pin)
+		else:
+			self.pins.append(pin)
 		return self
 
 	def addShape(self, shape):
@@ -113,7 +116,7 @@ class DipTraceComponentPart:
 			self.shapes.append(shape)
 		return self
 
-	def setShowNumbers(self, state=True):
+	def setShowNumbers(self, state:bool=True):
 		self.show_numbers = 1 if state else 0
 		return self
 
@@ -179,21 +182,21 @@ class DipTraceComponentPart:
 
 class DipTraceComponent:
 
-	def __init__(self, name, ref='', value=None):
+	def __init__(self, name:str, ref:str='', value:str=None):
 		self.name   = name
 		self.value  = value or name
 		self.ref    = ref
 		self.parts  = []
 
-	def addPart(self, part):
+	def addPart(self, part:DipTraceComponentPart):
 		self.parts.append(part)
 		return self
 
-	def setPattern(self, pattern):
+	def setPattern(self, pattern:DipTracePattern):
 		self.pattern = pattern
 		return self
 
-	def __str__(self):
+	def __str__(self) -> str:
 		result  = '      (Component\n'
 		for part in self.parts: result += str(part).format(self)
 		if self.pattern: result += str(self.pattern)
@@ -203,17 +206,17 @@ class DipTraceComponent:
 
 class DipTraceComponentLibrary:
 
-	def __init__(self, name, hint=None):
+	def __init__(self, name:str, hint:str=None):
 
 		self.name = name
 		self.hint = hint or name
 		self.components = []
 
-	def addComponent(self, component):
+	def addComponent(self, component:DipTraceComponent):
 		self.components.append(component)
 		return self
 
-	def __str__(self):
+	def __str__(self) -> str:
 		DipTracePattern.isComponent = True # Fix for DipTracePattern
 
 		result  = '(Source "DipTrace-ElementLibrary" 28)\n'
@@ -235,7 +238,7 @@ class DipTraceComponentLibrary:
 
 		return result
 
-	def save(self, filename):
+	def save(self, filename:str):
 		with open(filename, 'w', encoding='utf-8') as f:
 			f.write(str(self))
 

@@ -22,8 +22,6 @@ def packIdcConnectors():
 		for file in files:
 			archive.write(file)
 
-	py7zr.pack_7zarchive('IDC Connectors',)
-
 
 if __name__ == "__main__":
 	packIdcConnectors()

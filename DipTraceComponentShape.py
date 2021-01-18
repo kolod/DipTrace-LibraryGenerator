@@ -24,7 +24,7 @@ class DipTracePoint:
 
 class DipTraceComponentShape:
 
-	def __init__(self, shape):
+	def __init__(self, shape:DipTraceComponentShapeType=DipTraceComponentShapeType.Null):
 		self.shape  = shape
 		self.points = []
 		self.setLocked()
@@ -95,7 +95,7 @@ class DipTraceComponentShape:
 		result += '              (FontWidth 0)\n'
 		result += '              (FontScale 0)\n'
 		result += '              (Orientation 0)\n'
-		result += '              (Type 1)\n'
+		result += '              (Type {0.shape.value})\n'.format(self)
 		result += '              (FontSize {0.font_size})\n'.format(self)
 		result += '              (FontColor 0)\n'
 		result += '              (FontType 0)\n'

@@ -3,7 +3,7 @@
 
 from enum import Enum
 
-class DipTraceShapeType(Enum):
+class DipTracePatternShapeType(Enum):
 	Null             = 0   # TODO:
 	Line             = 1
 	Rectangle        = 2
@@ -13,6 +13,18 @@ class DipTraceShapeType(Enum):
 	Arc              = 6
 	Text             = 7
 	Poliline         = 8
+	Poligon          = 9
+
+class DipTraceComponentShapeType(Enum):
+	Null             = 0   # TODO:
+	Line             = 1   # +
+	Rectangle        = 2
+	Arrow            = 3   # +
+	FilledRectangle  = 2
+	FilledObround    = 5
+	Arc              = 6
+	Text             = 7
+	Poliline         = 8   # +
 	Poligon          = 9
 
 class DipTraceLayer(Enum):

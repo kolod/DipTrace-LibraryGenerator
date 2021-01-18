@@ -23,7 +23,7 @@ class DipTracePoint:
 
 class DipTracePatternShape:
 
-	def __init__(self, shape):
+	def __init__(self, shape:DipTracePatternShapeType=DipTracePatternShapeType.Null):
 		self.shape  = shape
 		self.points = []
 		self.setLineWidth()

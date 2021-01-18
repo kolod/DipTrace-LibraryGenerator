@@ -37,11 +37,11 @@ class IDC_Connectors:
 		middle = C/2
 		triag  = 2 / math.sqrt(3)
 
-		shape_01 = DipTracePatternShape(DipTraceShapeType.Rectangle) \
+		shape_01 = DipTracePatternShape(DipTracePatternShapeType.Rectangle) \
 			.addPoint(right, top) \
 			.addPoint(left, bottom)
 
-		shape_02 = DipTracePatternShape(DipTraceShapeType.Poliline) \
+		shape_02 = DipTracePatternShape(DipTracePatternShapeType.Poliline) \
 			.addPoint(middle - 2.5, bottom      ) \
 			.addPoint(middle - 2.5, bottom - 0.5) \
 			.addPoint(left   + 0.5, bottom - 0.5) \
@@ -51,7 +51,7 @@ class IDC_Connectors:
 			.addPoint(middle + 2.5, bottom - 0.5) \
 			.addPoint(middle + 2.5, bottom      )
 
-		shape_04 = DipTracePatternShape(DipTraceShapeType.Poligon) \
+		shape_04 = DipTracePatternShape(DipTracePatternShapeType.Poligon) \
 			.addPoint(0.0         , bottom + 1.0) \
 			.addPoint(triag       , bottom + 3.0) \
 			.addPoint(-triag      , bottom + 3.0)
@@ -75,11 +75,11 @@ class IDC_Connectors:
 		middle   = C/2
 		triag    = 2 / math.sqrt(3)
 
-		shape_01 = DipTracePatternShape(DipTraceShapeType.Rectangle) \
+		shape_01 = DipTracePatternShape(DipTracePatternShapeType.Rectangle) \
 			.addPoint(right, top) \
 			.addPoint(left, bottom)
 
-		shape_02 = DipTracePatternShape(DipTraceShapeType.Poliline) \
+		shape_02 = DipTracePatternShape(DipTracePatternShapeType.Poliline) \
 			.addPoint(middle - 2.5, top         ) \
 			.addPoint(middle - 2.5, top    + 0.5) \
 			.addPoint(left   + 0.5, top    + 0.5) \
@@ -144,15 +144,15 @@ class IDC_Connectors:
 		y = pin_number * 2.54
 
 		return [
-			DipTraceComponentShape(DipTraceShapeType.Line)
+			DipTraceComponentShape(DipTraceComponentShapeType.Line)
 				.addPoint(0.0, y)
 				.addPoint(5.08, y)
 				.setLocked(True),
-			DipTraceComponentShape(DipTraceShapeType.Line)
+			DipTraceComponentShape(DipTraceComponentShapeType.Line)
 				.addPoint(5.08 - 0.9525, y - 0.9525)
 				.addPoint(5.08, y)
 				.setLocked(True),
-			DipTraceComponentShape(DipTraceShapeType.Line)
+			DipTraceComponentShape(DipTraceComponentShapeType.Line)
 				.addPoint(5.08 - 0.9525, y + 0.9525)
 				.addPoint(5.08, y)
 				.setLocked(True)
@@ -168,10 +168,10 @@ class IDC_Connectors:
 			part.addShape(self.component_pin_shape(pin))
 
 		part.addShape([
-			DipTraceComponentShape(DipTraceShapeType.Line)
+			DipTraceComponentShape(DipTraceComponentShapeType.Line)
 				.addPoint(2.54-0.3175, 0)
 				.addPoint(2.54-0.3175, (pin_count/2-1)*2.54),
-			DipTraceComponentShape(DipTraceShapeType.Line)
+			DipTraceComponentShape(DipTraceComponentShapeType.Line)
 				.addPoint(2.54+0.3175, 0)
 				.addPoint(2.54+0.3175, (pin_count/2-1)*2.54),
 		])
