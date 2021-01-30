@@ -10,6 +10,48 @@ from DipTracePatternLibrary import *
 from DipTraceComponentShape import *
 from DipTraceComponentLibrary import *
 
+def shape_5mm():
+
+	r = 2.95
+	x = 2.6
+	y = math.sqrt(math.pow(r, 2) - math.pow(x, 2))
+
+	return [
+		DipTracePatternShape(DipTracePatternShapeType.Arc)
+			.setLayer(DipTraceLayer.TopSilk)
+			.addPoint(-x, y)
+			.addPoint(0.0, r)
+			.addPoint(-x, -y)
+			.setLocked(True),
+		DipTracePatternShape(DipTracePatternShapeType.Line)
+			.setLayer(DipTraceLayer.TopSilk)
+			.addPoint(-x, y)
+			.addPoint(-x, -y)
+			.setLocked(True),
+		DipTracePatternShape(DipTracePatternShapeType.Arc)
+			.setLayer(DipTraceLayer.TopCourtyard)
+			.addPoint(-x, y)
+			.addPoint(0.0, r)
+			.addPoint(-x, -y)
+			.setLocked(True),
+		DipTracePatternShape(DipTracePatternShapeType.Line)
+			.setLayer(DipTraceLayer.TopCourtyard)
+			.addPoint(-x, y)
+			.addPoint(-x, -y)
+			.setLocked(True),
+		DipTracePatternShape(DipTracePatternShapeType.Arc)
+			.setLayer(DipTraceLayer.TopAssembly)
+			.addPoint(-x, y)
+			.addPoint(0.0, r)
+			.addPoint(-x, -y)
+			.setLocked(True),
+		DipTracePatternShape(DipTracePatternShapeType.Line)
+			.setLayer(DipTraceLayer.TopAssembly)
+			.addPoint(-x, y)
+			.addPoint(-x, -y)
+			.setLocked(True)
+	]
+
 def shape_3mm():
 
 	r = 1.5
@@ -59,7 +101,7 @@ def shape_3mm():
 			.setLocked(True)
 	]
 
-def pad_3mm():
+def pad():
 	return [
 		DipTracePad(1, -1.27, 0.0)
 			.setLocked(True)
@@ -83,13 +125,24 @@ def pad_3mm():
 				.setSize(0.45, 0.45)),
 	]
 
+
 def pattern_3mm(color:str):
 	name = 'LED-3mm-{0}'.format(color)
 	model = name + '.step'
 
 	return DipTracePattern(name, 'D') \
 		.addShape(shape_3mm()) \
-		.addPad(pad_3mm()) \
+		.addPad(pad()) \
+		.add3dModel(DipTrace3dModel(model).setRotation(90.0))
+
+
+def pattern_5mm(color:str):
+	name = 'LED-5mm-{0}'.format(color)
+	model = name + '.step'
+
+	return DipTracePattern(name, 'D') \
+		.addShape(shape_5mm()) \
+		.addPad(pad()) \
 		.add3dModel(DipTrace3dModel(model).setRotation(90.0))
 
 
@@ -111,11 +164,7 @@ def pin_shape() -> list:
 		return [
 			DipTraceComponentShape(DipTraceComponentShapeType.Line)
 				.addPoint(-2.54, 0.0)
-				.addPoint(x, 0.0)
-				.setLocked(True),
-			DipTraceComponentShape(DipTraceComponentShapeType.Line)
-				.addPoint(2.54, 0.0)
-				.addPoint(x, 0.0)
+				.addPoint( 2.54, 0.0)
 				.setLocked(True),
 			DipTraceComponentShape(DipTraceComponentShapeType.Poliline)
 				.addPoint(-x,  1.27)
@@ -149,6 +198,12 @@ def run(colors):
 
 	for color in colors:
 		p = pattern_3mm(color)
+		c = component(color).setPattern(p)
+		patternLib.addPattern(p)
+		componentLib.addComponent(c)
+
+	for color in colors:
+		p = pattern_5mm(color)
 		c = component(color).setPattern(p)
 		patternLib.addPattern(p)
 		componentLib.addComponent(c)

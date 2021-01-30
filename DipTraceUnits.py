@@ -2,6 +2,9 @@
 #-*- coding: utf-8 -*-
 
 
+import re
+
+
 def mm2inch(value):
 	return value / 2.54
 

@@ -3,6 +3,24 @@
 
 from enum import Enum
 
+
+class DipTraceIpcMounting(Enum):
+	Surface      = 0
+	ThroughtHole = 1
+
+class DipTraceIpcCategory(Enum):
+	Diodes       = 51
+
+class DipTracePatternType(Enum):
+	Free             = 0
+	Circle           = 4
+	Lines            = 5
+	Square           = 6
+	Matrix           = 7
+	Rectangle        = 8
+	ZigZag           = 9
+	IPC7351          = 10
+
 class DipTracePatternShapeType(Enum):
 	Null             = 0   # TODO:
 	Line             = 1
@@ -27,7 +45,7 @@ class DipTraceComponentShapeType(Enum):
 	Poliline         = 8   # +
 	Poligon          = 9
 
-class DipTraceLayer(Enum):
+class DipTraceLayerType(Enum):
 	TopSilk          = 0
 	TopAssembly      = 1
 	TopMask          = 2

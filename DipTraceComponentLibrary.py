@@ -3,6 +3,7 @@
 
 
 from enum import Enum
+import textwrap
 from DipTraceUnits import *
 from DipTracePatternLibrary import *
 
@@ -199,7 +200,7 @@ class DipTraceComponent:
 	def __str__(self) -> str:
 		result  = '      (Component\n'
 		for part in self.parts: result += str(part).format(self)
-		if self.pattern: result += str(self.pattern)
+		if hasattr(self, 'pattern'): result += textwrap.indent(str(self.pattern), '  ')
 		result += '      )\n'
 		return result
 
@@ -213,7 +214,10 @@ class DipTraceComponentLibrary:
 		self.components = []
 
 	def addComponent(self, component:DipTraceComponent):
-		self.components.append(component)
+		if type(component) is list:
+			self.components.extend(component)
+		else:
+			self.components.append(component)
 		return self
 
 	def __str__(self) -> str:
