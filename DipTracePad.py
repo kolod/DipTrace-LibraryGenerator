@@ -5,12 +5,10 @@
 import re
 from io import TextIOWrapper
 from typing import  Literal, AnyStr
-
 from DipTraceUnits import mm2units, units2mm
 from DipTracePoint import DipTracePoint
 from DipTraceTerminal import DipTraceTerminal
-from DipTraceEnums import DipTraceHoleTypes, DipTracePadShapes
-
+from DipTraceEnums import DipTraceHoleTypes, DipTracePadShapes, DipTracePadShapesNew
 from reHelper import reJoin, reInt, reString, reFloat, searchDoubleFloat, searchSingleBool, searchSingleFloat, searchSingleInt
 
 class DipTracePad:
@@ -24,7 +22,7 @@ class DipTracePad:
 		self.setName()
 		self.setNote()
 		self.setNumber()
-		self.setposition()
+		self.setPosition()
 		self.setGroup()
 		self.setSurface()
 		self.setSize()
@@ -34,7 +32,13 @@ class DipTracePad:
 		self.setStandart()
 		self.setPadMask()
 		self.setShape()
+		self.setShapeNew()
 		self.setHole()
+		self.setCustomShrink()
+		self.setCustomShrinkNew()
+		self.setCustomSwell()
+		self.setCustomSwellNew()
+
 		if match:
 			self.number = int(match.group(1))
 			self.name   = match.group(2)
@@ -55,7 +59,7 @@ class DipTracePad:
 		self.number = number
 		return self
 
-	def setposition(self, x:float=0.0, y:float=0.0):
+	def setPosition(self, x:float=0.0, y:float=0.0):
 		self.x = mm2units(x)
 		self.y = mm2units(y)
 		return self
@@ -70,11 +74,6 @@ class DipTracePad:
 
 	def setGroup(self, group:int=-1):
 		self.group = group
-		return self
-
-	def move(self, x=0.0, y=0.0):
-		self.x += mm2units( x )
-		self.y += mm2units( y )
 		return self
 
 	def setSize(self, width=0.0, height=0.0):
@@ -100,8 +99,12 @@ class DipTracePad:
 		self.sided = 'Y' if state else 'N'
 		return self
 
-	def setShape(self, shape=DipTracePadShapes.Ellipse):
+	def setShape(self, shape=DipTracePadShapes.Oval):
 		self.shape = shape
+		return self
+
+	def setShapeNew(self, shape=DipTracePadShapesNew.Ellipse):
+		self.shape_new = shape
 		return self
 
 	def setPadMask(self, percent=0, edge_gap=0, segment_gap=0, segment_side=0):
@@ -119,12 +122,33 @@ class DipTracePad:
 		self.mask_bottom_segments = segments
 		return self
 
+	def setCustomSwell(self, swell:float=0.0):
+		self.custom_swell = swell
+		return self
+
+	def setCustomSwellNew(self, swell:float=0.0):
+		self.custom_swell_new = swell
+		return self
+
+	def setCustomShrink(self, shrink:float=0.0):
+		self.custom_shrink = shrink
+		return self
+
+	def setCustomShrinkNew(self, shrink:float=0.0):
+		self.custom_shrink_new = shrink
+		return self
+
+	def move(self, x=0.0, y=0.0):
+		self.x += mm2units( x )
+		self.y += mm2units( y )
+		return self
+
 	def addTerminal(self, terminal:DipTraceTerminal):
 		self.terminals.append(terminal)
 		return self
 
 	@staticmethod
-	def pattern():
+	def pattern() -> Literal:
 		return reJoin(r'\(Pad', reInt, reString, reString, reFloat, reFloat)
 
 	def load(self, datafile:TextIOWrapper):
@@ -194,6 +218,9 @@ class DipTracePad:
 			elif tmp := searchSingleInt(r'PadShape', line):
 				self.shape = DipTracePadShapes(int(tmp.group(1)))
 
+			elif tmp := searchSingleInt(r'PadShape_New', line):
+				self.shape_new = DipTracePadShapesNew(int(tmp.group(1)))
+
 			elif tmp := searchSingleFloat(r'PadWidth', line):
 				self.width = float(tmp.group(1))
 
@@ -218,46 +245,74 @@ class DipTracePad:
 			elif tmp := searchSingleFloat(r'PadMask_SegmentSide', line):
 				self.mask_segment_side = float(tmp.group(1))
 
+			elif tmp := searchSingleFloat(r'CustomSwell', line):
+				self.custom_swell = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'CustomSwell_New', line):
+				self.custom_swell_new = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'CustomShrink', line):
+				self.custom_shrink = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'CustomShrink_New', line):
+				self.custom_shrink_new = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadHole', line):
+				self.hole_width = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadHoleH', line):
+				self.hole_height = float(tmp.group(1))
+
+			elif tmp := searchSingleInt(r'PadHoleType', line):
+				self.hole_type = DipTraceHoleTypes(int(tmp.group(1)))
+
 		return self
 
 
 	def __str__(self):
-		points         = '\n'.join([str(point) for point in self.points])
-		points_new     = '\n'.join([str(point) for point in self.points_new])
-		terminals      = '\n'.join([str(point) for point in self.terminals])
+		points         = '\n'.join([str(point) for point in self.points     ])
+		points_new     = '\n'.join([str(point) for point in self.points_new ])
+		terminals      = '\n'.join([str(point) for point in self.terminals  ])
 		top_segmens    = '\n'
 		bottom_segmens = '\n'
 
-		return \
-			f'(Pad {self.number} "{self.name}" "{self.note}" {self.x:.5g} {self.y:.5g}\n'\
-			f'(Number {self.number})\n'\
-			f'(Number_New {self.number})\n'\
-			f'(Inverted "{self.inverted}")\n'\
-			f'(Locked "{self.locked}")\n'\
-			f'(Sided "{self.sided}")\n'\
-			f'(PadWidth {self.width:.5g})\n'\
-			f'(PadHeight {self.height:.5g})\n'\
-			f'(PadHole {self.hole_width:.5g})\n'\
-			f'(PadHoleH {self.hole_height:.5g})\n'\
-			f'(PadHoleType {self.hole_type.value})\n'\
-			f'(SurfacePad "{self.surface}")\n'\
-			f'(PadShape {self.shape.value})\n'\
-			f'(PadShape_New {self.shape.value})\n'\
-			f'(PadWidth_New {self.width:.5g})\n'\
-			f'(PadHeight_New {self.height:.5g})\n'\
-			f'(Group {self.group})\n'\
-			f'(Standard "{self.standart}")\n'\
-			f'(Points\n{points}\n)\n'\
-			f'(PadPoints_New\n{points_new}\n)\n'\
-			f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n'\
-			f'(PadMask_Percent {self.mask_percent:0.2g})\n'\
-			f'(PadMask_EdgeGap {self.mask_edge_gap:0.1g})\n'\
-			f'(PadMask_SegmentGap {self.mask_segment_gap:0.1g})\n'\
-			f'(PadMask_SegmentSide {self.mask_segment_side:0.1g})\n'\
-			f'(PadMask_TopSegments {len(self.mask_top_segments)}{top_segmens}\n)\n'\
-			f'(PadMask_BotSegments {len(self.mask_bottom_segments)}{bottom_segmens}\n)\n'\
-			f')\n'
+		return ''.join([
+			f'(Pad {self.number} "{self.name}" "{self.note}" {self.x:.5g} {self.y:.5g}\n',
+			f'(Number {self.number})\n',
+			f'(Number_New {self.number})\n',
+			f'(Inverted "{self.inverted}")\n',
+			f'(Locked "{self.locked}")\n',
+			f'(Sided "{self.sided}")\n',
+
+			f'(CustomSwell {self.custom_swell:.5g})\n',
+			f'(CustomShrink {self.custom_swell_new:.5g})\n',
+			f'(CustomSwell_New {self.custom_shrink:.5g})\n',
+			f'(CustomShrink_New {self.custom_shrink_new:.5g})\n',
+			f'(PadWidth {self.width:.5g})\n',
+			f'(PadHeight {self.height:.5g})\n',
+			f'(PadHole {self.hole_width:.5g})\n',
+			f'(PadHoleH {self.hole_height:.5g})\n',
+			f'(PadHoleType {self.hole_type.value})\n',
+			f'(SurfacePad "{self.surface}")\n',
+			f'(PadShape {self.shape.value})\n',
+			f'(PadShape_New {self.shape_new.value})\n',
+			f'(PadWidth_New {self.width:.5g})\n',
+			f'(PadHeight_New {self.height:.5g})\n',
+			f'(Group {self.group})\n',
+			f'(Standard "{self.standart}")\n',
+			f'(Points\n{points}\n)\n',
+			f'(PadPoints_New\n{points_new}\n)\n',
+			f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n',
+			f'(PadMask_Percent {self.mask_percent:0.2g})\n',
+			f'(PadMask_EdgeGap {self.mask_edge_gap:0.1g})\n',
+			f'(PadMask_SegmentGap {self.mask_segment_gap:0.1g})\n',
+			f'(PadMask_SegmentSide {self.mask_segment_side:0.1g})\n',
+			f'(PadMask_TopSegments {len(self.mask_top_segments)}{top_segmens}\n)\n',
+			f'(PadMask_BotSegments {len(self.mask_bottom_segments)}{bottom_segmens}\n)\n',
+			f')\n',
+		])
 
 
 if __name__ == "__main__":
-	pass
+	import os
+	os.system('DipTracePatternLibrary.py')

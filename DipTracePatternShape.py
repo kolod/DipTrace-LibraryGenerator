@@ -2,12 +2,11 @@
 #-*- coding: utf-8 -*-
 
 import re
-from enum import Enum
 from io import TextIOWrapper
-from typing import  Literal, AnyStr
-from reHelper import *
-from DipTraceEnums import *
-from DipTraceUnits import *
+from typing import Literal, AnyStr
+from reHelper import reJoin, reInt, reFloat, reBool, reString, searchSingleFloat, searchSingleInt, searchDoubleFloat
+from DipTraceEnums import DipTracePatternShapeType, DipTraceLayerType, DipTraceTextAlign
+from DipTraceUnits import mm2units, units2mm
 from DipTracePoint import DipTracePoint
 
 class DipTracePatternShape:

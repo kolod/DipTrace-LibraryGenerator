@@ -80,8 +80,8 @@ class DipTraceLayer:
 			f'(Layer\n',
 			f'(Enabled "{self.enabled}")\n',
 			f'(Number {self.number})\n',
-			f'(Pads\n{pads}\n)\n',
-			f'(Shapes\n{shapes}\n)\n',
+			f'(Pads\n{pads}\n)\n' if self.number != 2 else '',       #TODO: Check this hack
+			f'(Shapes\n{shapes}\n)\n' if self.number != 2 else '',   #TODO: Check this hack
 			f'(Holes\n{holes}\n)\n',
 			f')\n',
 		])

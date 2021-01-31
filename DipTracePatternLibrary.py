@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
-
 import re
-
-from reHelper import searchSingleString, reJoin, reInt ,reString
+from reHelper import searchSingleString, reJoin, reInt
 from DipTracePattern import DipTracePattern
 from DipTraceIndentation import DipTraceIndentation
 
