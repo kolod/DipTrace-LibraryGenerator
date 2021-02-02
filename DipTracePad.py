@@ -38,6 +38,9 @@ class DipTracePad:
 		self.setCustomShrinkNew()
 		self.setCustomSwell()
 		self.setCustomSwellNew()
+		self.setPadAngle()
+		self.setPadShapePosition()
+		self.setPadCorner()
 
 		if match:
 			self.number = int(match.group(1))
@@ -136,6 +139,19 @@ class DipTracePad:
 
 	def setCustomShrinkNew(self, shrink:float=0.0):
 		self.custom_shrink_new = shrink
+		return self
+
+	def setPadAngle(self, angle:float=0.0):
+		self.pad_angle = angle
+		return self
+
+	def setPadShapePosition(self, x:float=0.0, y:float=0.0):
+		self.pad_shape_x = mm2units(x) #TODO: Check units
+		self.pad_shape_y = mm2units(y) #TODO: Check units
+		return self
+
+	def setPadCorner(self, corner:float=0.0):
+		self.pad_corner = corner
 		return self
 
 	def move(self, x=0.0, y=0.0):
@@ -266,6 +282,18 @@ class DipTracePad:
 			elif tmp := searchSingleInt(r'PadHoleType', line):
 				self.hole_type = DipTraceHoleTypes(int(tmp.group(1)))
 
+			elif tmp := searchSingleFloat(r'PadAngle', line):
+				self.pad_angle = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadShape_X', line):
+				self.pad_shape_x = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadShape_Y', line):
+				self.pad_shape_y = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadCorner', line):
+				self.pad_corner = float(tmp.group(1))
+
 		return self
 
 
@@ -296,6 +324,10 @@ class DipTracePad:
 			f'(SurfacePad "{self.surface}")\n',
 			f'(PadShape {self.shape.value})\n',
 			f'(PadShape_New {self.shape_new.value})\n',
+			f'(PadAngle {self.pad_angle:0.5g})\n',
+			f'(PadShape_X {self.pad_shape_x:0.5g})\n',
+			f'(PadShape_Y {self.pad_shape_y:0.5g})\n',
+			f'(PadCorner {self.pad_corner:.6g})\n',
 			f'(PadWidth_New {self.width:.5g})\n',
 			f'(PadHeight_New {self.height:.5g})\n',
 			f'(Group {self.group})\n',

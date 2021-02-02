@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
+from DipTraceDimension import DipTraceDimension
 import re
 from io import TextIOWrapper
 from typing import Literal, AnyStr, List
@@ -14,6 +15,8 @@ from DipTracePatternShape import DipTracePatternShape
 from DipTraceEnums import DipTracePatternType, DipTracePatternShapeType, DipTraceHoleTypes, DipTracePadShapes, DipTracePadShapesNew
 from DipTraceLayer import DipTraceLayer
 from DipTraceTerminal import DipTraceTerminal
+from DipTraceCategoryType import DipTraceCategoryType
+from DipTraceDimension import DipTraceDimension
 
 class DipTracePattern:
 
@@ -29,10 +32,15 @@ class DipTracePattern:
 		self.terminals    = []
 		self.names        = []
 		self.user_fields  = []
+		self.categories   = []
+		self.dimensions   = []
 		self.setName()
 		self.setRef()
 		self.setManufacturer()
 		self.setDatasheet()
+		self.setMounting()
+		self.setCategoryName()
+		self.setCategoryIndex()
 		self.setValue()
 		self.setLocked()
 		self.setSize()
@@ -52,6 +60,9 @@ class DipTracePattern:
 		self.setPadMask()
 		self.setHole()
 		self.setVerifications()
+		self.setPadAngle()
+		self.setPadShapePosition()
+		self.setPadCorner()
 
 		if match:
 			self.name = match.group(1)
@@ -66,12 +77,24 @@ class DipTracePattern:
 		self.ref = ref
 		return self
 
+	def setCategoryName(self, name:str=''):
+		self.category_name = name
+		return self
+
+	def setCategoryIndex(self, index:int=0):
+		self.category_index = index
+		return self
+
 	def setLocked(self, state:bool=False):
 		self.locked = 'Y' if state else 'N'
 		return self
 
 	def setSurface(self, state=False):
 		self.surface = 'Y' if state else 'N'
+		return self
+
+	def setMounting(self, mounting:int=0):
+		self.mounting = mounting
 		return self
 
 	def setManufacturer(self, manufacturer:str=''):
@@ -191,6 +214,19 @@ class DipTracePattern:
 		self.hole_height = mm2units( height )
 		return self
 
+	def setPadAngle(self, angle:float=0.0):
+		self.pad_angle = angle
+		return self
+
+	def setPadShapePosition(self, x:float=0.0, y:float=0.0):
+		self.pad_shape_x = mm2units(x) #TODO: Check units
+		self.pad_shape_y = mm2units(y) #TODO: Check units
+		return self
+
+	def setPadCorner(self, corner:float=0.0):
+		self.pad_corner = corner
+		return self
+
 	def addDefaultShapes(self):
 		self.shapes.insert(0,
 			DipTracePatternShape(DipTracePatternShapeType.Null)
@@ -219,6 +255,14 @@ class DipTracePattern:
 		self.user_fields.append([name, value, 1 if isLink else 0])
 		return self
 
+	def addCategory(self, category:DipTraceCategoryType):
+		self.categories.append(category)
+		return self
+
+	def addDimension(self, dimension:DipTraceDimension):
+		self.dimensions.append(dimension)
+		return self
+
 	@staticmethod
 	def pattern() -> Literal:
 		return reJoin(r'\(Pattern', reString, reString)
@@ -244,20 +288,25 @@ class DipTracePattern:
 						isLink = int(tmp.group(3))
 						self.addUserField(name, value, isLink)
 
-			elif line == '(Dimensions':
-				while line := datafile.readline().strip():
-					if line == ')':
-						break
-
 			elif line == '(PadPoints_New':
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
 
-			elif line.startswith('(CategoryTypes '):
+			elif line == '(Dimensions':
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
+					if line == '(Dimension':
+						self.addDimension(DipTraceDimension().load(datafile))
+
+
+			elif line.startswith('(CategoryTypes'):
+				while line := datafile.readline().strip():
+					if line == ')':
+						break
+					if tmp := re.search(DipTraceCategoryType.pattern(), line):
+						self.addCategory(DipTraceCategoryType(match=tmp))
 
 			elif line.startswith('(PossibleNames '): # unused
 				while line := datafile.readline().strip():
@@ -433,18 +482,41 @@ class DipTracePattern:
 				if tmp := re.findall(reBool, tmp.group(1)):
 					self.verifications = tmp
 
+			elif tmp := searchSingleInt(r'Mounting', line):
+				self.mounting = int(tmp.group(1))
+
+			elif tmp := searchSingleString(r'CategoryName', line):
+				self.category_name = tmp.group(1)
+
+			elif tmp := searchSingleInt(r'CategoryIndex', line):
+				self.category_index = int(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadAngle', line):
+				self.pad_angle = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadShape_X', line):
+				self.pad_shape_x = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadShape_Y', line):
+				self.pad_shape_y = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadCorner', line):
+				self.pad_corner = float(tmp.group(1))
+
 		return self
 
 
 	def __str__(self) -> str:
 
-		points     = '\n'.join([str(point)    for point    in self.points    ])
-		points_new = '\n'.join([str(point)    for point    in self.pointsNew ])
-		pads       = '\n'.join([str(pad)      for pad      in self.pads      ])
-		shapes     = '\n'.join([str(shape)    for shape    in self.shapes    ])
-		holes      = '\n'.join([str(hole)     for hole     in self.holes     ])
-		layers     = '\n'.join([str(layer)    for layer    in self.layers    ])
-		terminals  = '\n'.join([str(terminal) for terminal in self.terminals ])
+		points     = '\n'.join([str(point)     for point     in self.points    ])
+		points_new = '\n'.join([str(point)     for point     in self.pointsNew ])
+		pads       = '\n'.join([str(pad)       for pad       in self.pads      ])
+		shapes     = '\n'.join([str(shape)     for shape     in self.shapes    ])
+		holes      = '\n'.join([str(hole)      for hole      in self.holes     ])
+		layers     = '\n'.join([str(layer)     for layer     in self.layers    ])
+		terminals  = '\n'.join([str(terminal)  for terminal  in self.terminals ])
+		categories = '\n'.join([str(category)  for category  in self.categories])
+		dimensions = '\n'.join([str(dimension) for dimension in self.dimensions])
 
 		holes   = '(Holes\n'   + holes   + '\n)\n' if len(holes)   else ''
 		pads    = '(Pads\n'    + pads    + '\n)\n' if len(pads)    else ''
@@ -462,14 +534,14 @@ class DipTracePattern:
 			f'(VariableParameter2 "{self.variableParameters[1]}")\n',
 			f'(VariableParameter3 "{self.variableParameters[2]}")\n',
 			f'(VariableParameter4 "{self.variableParameters[3]}")\n',
-			f'(Width {self.width:.5g})\n',
-			f'(Height {self.height:.5g})\n',
-			f'(Spacing1 {self.spacings[0]:.5g})\n',
-			f'(Spacing2 {self.spacings[1]:.5g})\n',
+			f'(Width {self.width:.6g})\n',
+			f'(Height {self.height:.6g})\n',
+			f'(Spacing1 {self.spacings[0]:.6g})\n',
+			f'(Spacing2 {self.spacings[1]:.6g})\n',
 			f'(VariableParameter5 "{self.variableParameters[4]}")\n',
-			f'(Spacing3 {self.spacings[2]:.5g})\n',
+			f'(Spacing3 {self.spacings[2]:.6g})\n',
 			f'(LockProperties "{self.locked}")\n',
-			f'(PatternOrientation {self.orientation:.5g})\n',
+			f'(PatternOrientation {self.orientation:.6g})\n',
 			f'(Number1 {self.numbers[0]})\n',
 			f'(Number2 {self.numbers[1]})\n',
 			f'(Type {self.type.value})\n',
@@ -477,17 +549,23 @@ class DipTracePattern:
 			f'(PadHeight {self.padHeight})\n',
 			f'(PadShape {self.shape.value})\n',
 			f'(SurfacePad "{self.surface}")\n',
-			f'(PadHole {self.hole_width:.5g})\n',
-			f'(PadHoleH {self.hole_height:.5g})\n',
+			f'(PadHole {self.hole_width:.6g})\n',
+			f'(PadHoleH {self.hole_height:.6g})\n',
 			f'(PadHoleType {self.hole_type.value})\n',
 			f'(PadPoints\n{points}\n)\n',
 			f'(PadPoints_New\n{points_new}\n)\n',
 			f'(PadShape_New {self.shape_new.value})\n',
+
+			f'(PadAngle {self.pad_angle:.6g})\n',
+			f'(PadShape_X {self.pad_shape_x:.6g})\n',
+			f'(PadShape_Y {self.pad_shape_y:.6g})\n',
+			f'(PadCorner {self.pad_corner:.6g})\n',
+
 			f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n',
 
-			f'(PadMask_Percent {self.mask_percent:.5g})\n',
-			f'(PadMask_EdgeGap {self.mask_edge_gap:.5g})\n',
-			f'(PadMask_SegmentGap {self.mask_segment_gap:.5g})\n',
+			f'(PadMask_Percent {self.mask_percent:.6g})\n',
+			f'(PadMask_EdgeGap {self.mask_edge_gap:.6g})\n',
+			f'(PadMask_SegmentGap {self.mask_segment_gap:.6g})\n',
 			f'(PadMask_SegmentSide {self.mask_segment_side})\n',
 
 			f'(PadMask_TopSegments 0\n)\n', #TODO: implement PadMask_TopSegments
@@ -496,12 +574,12 @@ class DipTracePattern:
 			f'{pads}\n',
 			f'{shapes}\n',
 			f'{holes}\n',
-			f'(OriginX {self.orgin_x:.5g})\n',
-			f'(OriginY {self.orgin_y:.5g})\n',
+			f'(OriginX {self.orgin_x:.6g})\n',
+			f'(OriginY {self.orgin_y:.6g})\n',
 			f'(OriginCross "{self.orgin_cross}")\n',
 			f'(OriginCircle "{self.orgin_circle}")\n',
-			f'(OriginCommon {self.orgin_common:.5g})\n',
-			f'(OriginCourtyard {self.orgin_courtyard:.5g})\n',
+			f'(OriginCommon {self.orgin_common:.6g})\n',
+			f'(OriginCourtyard {self.orgin_courtyard:.6g})\n',
 			f'(Name_Description "{self.description}")\n',
 			f'(Name_Unique "{self.unique_name}")\n',
 			f'(RecoveryCode "{self.recovery_code}")\n',
@@ -511,9 +589,13 @@ class DipTracePattern:
 			f'(Pattern_Groups\n)\n',
 			f'(Layers\n{layers}\n)\n',
 			f'(UserFields\n{user_fields}\n)\n',
-			f'(Dimensions\n)\n', #TODO: Add Dimensions
+			f'(Dimensions\n{dimensions}\n)\n', #TODO: Add Dimensions
 			f'{model}\n',
+			f'(Mounting {self.mounting})\n',
 			f'(Datasheet "{self.datasheet}")\n',
+			f'(CategoryName "{self.category_name}")\n',
+			f'(CategoryIndex {self.category_index})\n',
+			f'(CategoryTypes {len(self.categories)}\n{categories}\n)\n',
 			f'(PossibleNames {len(self.names)}\n)\n',
 			f'(Verification {verifications})\n',
 			f')',

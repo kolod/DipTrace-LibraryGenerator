@@ -4,6 +4,23 @@
 from enum import Enum
 
 
+class DipTraceDimentionType(Enum):
+	Horizontal       = 0
+	Vertical         = 1
+	Free             = 2
+	Radius           = 3
+	Point            = 4
+
+class DipTraceDimentionUnits(Enum):
+	Default          = 0
+	Inches           = 1
+	Mils             = 2
+	Millimeters      = 3
+
+class DipTraceDimensionPointerType(Enum):
+	Coordinates      = 0
+	Comment          = 1
+
 class DipTraceIpcMounting(Enum):
 	Surface          = 0
 	ThroughtHole     = 1
@@ -59,6 +76,8 @@ class DipTraceLayerType(Enum):
 	BottomKeepout    = 10
 	Bottom           = 11
 	BoardCutout      = 12
+	TopDimension     = 13
+	BottomDimension  = 14
 	TopCourtyard     = 16
 	BottomCourtyard  = 17
 	TopOutline       = 18

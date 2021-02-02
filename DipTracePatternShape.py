@@ -4,7 +4,7 @@
 import re
 from io import TextIOWrapper
 from typing import Literal, AnyStr
-from reHelper import reJoin, reInt, reFloat, reBool, reString, searchSingleFloat, searchSingleInt, searchDoubleFloat
+from reHelper import reJoin, reInt, reFloat, reBool, reString, searchSingleBool, searchSingleFloat, searchSingleInt, searchDoubleFloat
 from DipTraceEnums import DipTracePatternShapeType, DipTraceLayerType, DipTraceTextAlign
 from DipTraceUnits import mm2units, units2mm
 from DipTracePoint import DipTracePoint
@@ -30,6 +30,7 @@ class DipTracePatternShape:
 		self.setTextHorizontal()
 		self.setTextVertical()
 		self.setTextWidth()
+		self.setAllLayers()
 		if match:
 			self.shape       = DipTracePatternShapeType(int(match.group(1)))
 			self.locked      = match.group(2)
@@ -51,6 +52,10 @@ class DipTracePatternShape:
 
 	def setEnabled(self, state=True):
 		self.enabled = 'Y' if state else 'N'
+		return self
+
+	def setAllLayers(self, state=False):
+		self.all_layers = 'Y' if state else 'N'
 		return self
 
 	def setWidth(self, width:float=-1.0):
@@ -148,11 +153,17 @@ class DipTracePatternShape:
 			elif tmp := searchSingleInt(r'TextAlign', line):
 				self.text_align = DipTraceTextAlign(int(tmp.group(1)))
 
+			elif tmp := searchSingleInt(r'Group', line):
+				self.group = int(tmp.group(1))
+
 			elif tmp := searchSingleFloat(r'LineSpacing', line):
 				self.text_spacing = float(tmp.group(1))
 
 			elif tmp := searchSingleFloat(r'TextAngle', line):
 				self.text_angle = float(tmp.group(1))
+
+			elif tmp := searchSingleBool(r'AllLayers', line):
+				self.all_layers = tmp.group(1)
 
 			elif line == '(Points':
 				while line := datafile.readline().strip():
@@ -200,18 +211,18 @@ class DipTracePatternShape:
 		width      = 0.75 if self.width < 0 else self.width
 
 		return ''.join([
-			f'(Shape {self.shape.value} "{self.locked}" {layer} {s[0]:.5g} {s[1]:.5g} {s[2]:.5g} {s[3]:.5g} {s[4]:.5g} {s[5]:.5g} ',
-			f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.5g} {self.line_width:.5g} 0 {width} 0)\n',
+			f'(Shape {self.shape.value} "{self.locked}" {layer} {s[0]:.6g} {s[1]:.6g} {s[2]:.6g} {s[3]:.6g} {s[4]:.6g} {s[5]:.6g} ',
+			f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {self.line_width:.6g} 0 {width:.6g} 0)\n',
 			f'{points}',
-			f'(Width {self.width:.5g})\n',
+			f'(Width {self.width:.6g})\n',
 			f'(Layer {self.layer.value})\n',
-			f'(TextHorz {self.text_horiz:.5g})\n',
-			f'(TextVert {self.text_vert:.5g})\n',
+			f'(TextHorz {self.text_horiz:.6g})\n',
+			f'(TextVert {self.text_vert:.6g})\n',
 			f'(TextAlign {self.text_align.value})\n',
-			f'(LineSpacing {self.text_spacing})\n',
-			f'(TextAngle {self.text_angle:.5g})\n',
+			f'(LineSpacing {self.text_spacing:.6g})\n',
+			f'(TextAngle {self.text_angle:.6g})\n',
 			f'{points_new}',
-			f'(AllLayers "N")\n',
+			f'(AllLayers "{self.all_layers}")\n',
 			f'(Group {self.group})\n'
 		])
 
