@@ -25,9 +25,6 @@ class DipTraceIpcMounting(Enum):
 	Surface          = 0
 	ThroughtHole     = 1
 
-class DipTraceIpcCategory(Enum):
-	Diodes           = 51
-
 class DipTracePatternType(Enum):
 	Free             = 0
 	Circle           = 4

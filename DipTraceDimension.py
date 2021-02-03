@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
-import re
 from io import TextIOWrapper
-from typing import Literal, AnyStr, List
-from DipTraceUnits import mm2units, units2mm
-from reHelper import reBracketed, searchSingleBool, searchSingleString, searchSingleInt, searchSingleFloat, searchDoubleFloat, searchSingleIntlList, searchSingleBoolList, searchSingleFloatList, reJoin, reString, reBool, reInt
+from DipTraceUnits import mm2units
+from reHelper import searchSingleBool, searchSingleString, searchSingleInt, searchSingleFloat, searchSingleIntlList, searchSingleFloatList
 from DipTraceEnums import DipTraceDimentionType, DipTraceDimentionUnits, DipTraceLayerType, DipTraceDimensionPointerType
 
 
@@ -111,6 +109,14 @@ class DipTraceDimension:
 			'sub_object' : sub_object,
 			'point'      : point
 		})
+		return self
+
+	def move(self, x:float=0.0, y:float=0.0):
+		self.point_d['x'] += mm2units(x)
+		self.point_d['y'] += mm2units(y)
+		for point in self.points:
+			point['x'] += mm2units(x)
+			point['y'] += mm2units(y)
 		return self
 
 	def load(self, datafile:TextIOWrapper):

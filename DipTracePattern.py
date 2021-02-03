@@ -63,10 +63,13 @@ class DipTracePattern:
 		self.setPadAngle()
 		self.setPadShapePosition()
 		self.setPadCorner()
+		self.setCustomSwell()
+		self.setMaskState()
+		self.setPasteState()
 
 		if match:
 			self.name = match.group(1)
-			self.ref = match.group(2)
+			self.ref  = match.group(2)
 		super().__init__()
 
 	def setName(self, name:str=''):
@@ -118,18 +121,6 @@ class DipTracePattern:
 		self.height = mm2units(height)
 		return self
 
-	def setPadSize(self, width=0.0, height=0.0):
-		self.padWidth  = mm2units(width)
-		self.padHeight = mm2units(height)
-		return self
-
-	def addPad(self, pad):
-		if type(pad) is list:
-			self.pads.extend(pad)
-		else:
-			self.pads.append(pad)
-		return self
-
 	def setShape(self, shape=DipTracePadShapes.Oval):
 		self.shape = shape
 		return self
@@ -138,20 +129,8 @@ class DipTracePattern:
 		self.shape_new = shape
 		return self
 
-	def addShape(self, shape):
-		if type(shape) is list:
-			self.shapes.extend(shape)
-		else:
-			self.shapes.append(shape)
-		return self
-
 	def addHole(self, hole:DipTraceHole):
 		self.holes.append(hole)
-		return self
-
-	def move(self, x:float=0.0, y:float=0.0):
-		for pad in self.pads: pad.move(x, y)
-		for shape in self.shapes: shape.move(x, y)
 		return self
 
 	def add3dModel(self, model:DipTrace3dModel):
@@ -195,10 +174,51 @@ class DipTracePattern:
 		self.unique_name = name
 		return self
 
-	def setRecovery(self, code:str='', generator:bool=False, model:bool=False):
+	def setRecovery(self, code_int:int=0, code:str='', generator:bool=False, model:bool=False):
+		self.recovery_code_int  = code_int
 		self.recovery_code      = code
 		self.recovery_generator = 'Y' if generator else 'N'
 		self.recovery_model     = 'Y' if model     else 'N'
+		return self
+
+	def setHole(self, hole_type=DipTraceHoleTypes.Round, width=0.0, height=0.0):
+		self.hole_type   = hole_type
+		self.hole_width  = mm2units( width )
+		self.hole_height = mm2units( height )
+		return self
+
+	def setCustomSwell(self, custom_swell:float=0.0):
+		self.custom_swell = custom_swell
+		return self
+
+	def setMaskState(self, top:int=0, bottom:int=0):
+		self.top_mask_state    = top
+		self.bottom_mask_state = bottom
+		return self
+
+	def setPasteState(self, top:int=0, bottom:int=0):
+		self.top_paste_state    = top
+		self.bottom_paste_state = bottom
+		return self
+
+	def setPadSize(self, width=0.0, height=0.0):
+		self.pad_width      = mm2units(width)
+		self.pad_height     = mm2units(height)
+		self.pad_width_new  = mm2units(width)
+		self.pad_height_new = mm2units(height)
+		return self
+
+	def setPadAngle(self, angle:float=0.0):
+		self.pad_angle = angle
+		return self
+
+	def setPadCorner(self, corner:float=0.0):
+		self.pad_corner = corner
+		return self
+
+	def setPadShapePosition(self, x:float=0.0, y:float=0.0):
+		self.pad_shape_x = mm2units(x) #TODO: Check units
+		self.pad_shape_y = mm2units(y) #TODO: Check units
 		return self
 
 	def setPadMask(self, percent:float=0.0, edge_gap:float=0.0, segment_gap:float=0.0, segment_side:int=0):
@@ -208,23 +228,18 @@ class DipTracePattern:
 		self.mask_segment_side = segment_side
 		return self
 
-	def setHole(self, hole_type=DipTraceHoleTypes.Round, width=0.0, height=0.0):
-		self.hole_type   = hole_type
-		self.hole_width  = mm2units( width )
-		self.hole_height = mm2units( height )
+	def addPad(self, pad):
+		if type(pad) is list:
+			self.pads.extend(pad)
+		else:
+			self.pads.append(pad)
 		return self
 
-	def setPadAngle(self, angle:float=0.0):
-		self.pad_angle = angle
-		return self
-
-	def setPadShapePosition(self, x:float=0.0, y:float=0.0):
-		self.pad_shape_x = mm2units(x) #TODO: Check units
-		self.pad_shape_y = mm2units(y) #TODO: Check units
-		return self
-
-	def setPadCorner(self, corner:float=0.0):
-		self.pad_corner = corner
+	def addShape(self, shape):
+		if type(shape) is list:
+			self.shapes.extend(shape)
+		else:
+			self.shapes.append(shape)
 		return self
 
 	def addDefaultShapes(self):
@@ -261,6 +276,11 @@ class DipTracePattern:
 
 	def addDimension(self, dimension:DipTraceDimension):
 		self.dimensions.append(dimension)
+		return self
+
+	def move(self, x:float=0.0, y:float=0.0):
+		for pad in self.pads: pad.move(x, y)
+		for shape in self.shapes: shape.move(x, y)
 		return self
 
 	@staticmethod
@@ -309,16 +329,6 @@ class DipTracePattern:
 						self.addCategory(DipTraceCategoryType(match=tmp))
 
 			elif line.startswith('(PossibleNames '): # unused
-				while line := datafile.readline().strip():
-					if line == ')':
-						break
-
-			elif line.startswith('(PadMask_TopSegments '):
-				while line := datafile.readline().strip():
-					if line == ')':
-						break
-
-			elif line.startswith('(PadMask_BotSegments '):
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
@@ -394,12 +404,6 @@ class DipTracePattern:
 			elif tmp := searchSingleFloat(r'Height', line):
 				self.height = float(tmp.group(1))
 
-			elif tmp := searchSingleFloat(r'PadWidth', line):
-				self.padWidth = float(tmp.group(1))
-
-			elif tmp := searchSingleFloat(r'PadHeight', line):
-				self.padHeight = float(tmp.group(1))
-
 			elif tmp := searchSingleInt(r'Type', line):
 				self.type = DipTracePatternType(int(tmp.group(1)))
 
@@ -427,6 +431,9 @@ class DipTracePattern:
 			elif tmp := searchSingleString(r'Name_Unique', line):
 				self.unique_name = tmp.group(1)
 
+			elif tmp := searchSingleInt(r'RecoveryCode', line):
+				self.recovery_code_int = int(tmp.group(1))
+
 			elif tmp := searchSingleString(r'RecoveryCode', line):
 				self.recovery_code = tmp.group(1)
 
@@ -445,6 +452,37 @@ class DipTracePattern:
 			elif tmp := searchSingleBool(r'LockProperties', line):
 				self.locked = tmp.group(1)
 
+			elif tmp := searchSingleBool(r'SurfacePad', line):
+				self.surface = tmp.group(1)
+
+			elif tmp := searchSingleInt(r'Mounting', line):
+				self.mounting = int(tmp.group(1))
+
+			elif tmp := searchSingleString(r'CategoryName', line):
+				self.category_name = tmp.group(1)
+
+			elif tmp := searchSingleInt(r'CategoryIndex', line):
+				self.category_index = int(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PatternOrientation', line):
+				self.orientation = float(tmp.group(1))
+
+			elif tmp := re.search(r'\(Verification\s(("([NY])+"\s*)*)\)', line): #TODO: Implement function for find array
+				if tmp := re.findall(reBool, tmp.group(1)):
+					self.verifications = tmp
+
+			elif tmp := searchSingleFloat(r'PadWidth', line):
+				self.pad_width = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadHeight', line):
+				self.pad_height = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadWidth_New', line):
+				self.pad_width_new = float(tmp.group(1))
+
+			elif tmp := searchSingleFloat(r'PadHeight_New', line):
+				self.pad_height_new = float(tmp.group(1))
+
 			elif tmp := searchSingleFloat(r'PadMask_Percent', line):
 				self.mask_percent = float(tmp.group(1))
 
@@ -457,9 +495,6 @@ class DipTracePattern:
 			elif tmp := searchSingleInt(r'PadMask_SegmentSide', line):
 				self.mask_segment_side = int(tmp.group(1))
 
-			elif tmp := searchSingleBool(r'SurfacePad', line):
-				self.surface = tmp.group(1)
-
 			elif tmp := searchSingleFloat(r'PadHole', line):
 				self.hole_width = float(tmp.group(1))
 
@@ -469,27 +504,11 @@ class DipTracePattern:
 			elif tmp := searchSingleInt(r'PadHoleType', line):
 				self.hole_type = DipTraceHoleTypes(int(tmp.group(1)))
 
-			elif tmp := searchSingleFloat(r'PatternOrientation', line):
-				self.orientation = float(tmp.group(1))
-
 			elif tmp := searchSingleInt(r'PadShape', line):
 				self.shape = DipTracePadShapes(int(tmp.group(1)))
 
 			elif tmp := searchSingleInt(r'PadShape_New', line):
 				self.shape_new = DipTracePadShapesNew(int(tmp.group(1)))
-
-			elif tmp := re.search(r'\(Verification\s(("([NY])+"\s*)*)\)', line): #TODO: Implement function for find array
-				if tmp := re.findall(reBool, tmp.group(1)):
-					self.verifications = tmp
-
-			elif tmp := searchSingleInt(r'Mounting', line):
-				self.mounting = int(tmp.group(1))
-
-			elif tmp := searchSingleString(r'CategoryName', line):
-				self.category_name = tmp.group(1)
-
-			elif tmp := searchSingleInt(r'CategoryIndex', line):
-				self.category_index = int(tmp.group(1))
 
 			elif tmp := searchSingleFloat(r'PadAngle', line):
 				self.pad_angle = float(tmp.group(1))
@@ -502,6 +521,31 @@ class DipTracePattern:
 
 			elif tmp := searchSingleFloat(r'PadCorner', line):
 				self.pad_corner = float(tmp.group(1))
+
+			elif line.startswith('(PadMask_TopSegments '):
+				while line := datafile.readline().strip():
+					if line == ')':
+						break
+
+			elif line.startswith('(PadMask_BotSegments '):
+				while line := datafile.readline().strip():
+					if line == ')':
+						break
+
+			elif tmp := searchSingleFloat(r'CustomSwell_New', line):
+				self.custom_swell = float(tmp.group(1))
+
+			elif tmp := searchSingleInt(r'TopMask_State', line):
+				self.top_mask_state = int(tmp.group(1))
+
+			elif tmp := searchSingleInt(r'BotMask_State', line):
+				self.bottom_mask_state = int(tmp.group(1))
+
+			elif tmp := searchSingleInt(r'TopPaste_State', line):
+				self.top_mask_state = int(tmp.group(1))
+
+			elif tmp := searchSingleInt(r'BotPaste_State', line):
+				self.bottom_paste_state = int(tmp.group(1))
 
 		return self
 
@@ -545,8 +589,8 @@ class DipTracePattern:
 			f'(Number1 {self.numbers[0]})\n',
 			f'(Number2 {self.numbers[1]})\n',
 			f'(Type {self.type.value})\n',
-			f'(PadWidth {self.padWidth})\n',
-			f'(PadHeight {self.padHeight})\n',
+			f'(PadWidth {self.pad_width})\n',
+			f'(PadHeight {self.pad_height})\n',
 			f'(PadShape {self.shape.value})\n',
 			f'(SurfacePad "{self.surface}")\n',
 			f'(PadHole {self.hole_width:.6g})\n',
@@ -555,22 +599,25 @@ class DipTracePattern:
 			f'(PadPoints\n{points}\n)\n',
 			f'(PadPoints_New\n{points_new}\n)\n',
 			f'(PadShape_New {self.shape_new.value})\n',
-
 			f'(PadAngle {self.pad_angle:.6g})\n',
 			f'(PadShape_X {self.pad_shape_x:.6g})\n',
 			f'(PadShape_Y {self.pad_shape_y:.6g})\n',
 			f'(PadCorner {self.pad_corner:.6g})\n',
-
+			f'(PadWidth_New {self.pad_width_new})\n',
+			f'(PadHeight_New {self.pad_height_new})\n',
 			f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n',
-
 			f'(PadMask_Percent {self.mask_percent:.6g})\n',
 			f'(PadMask_EdgeGap {self.mask_edge_gap:.6g})\n',
 			f'(PadMask_SegmentGap {self.mask_segment_gap:.6g})\n',
 			f'(PadMask_SegmentSide {self.mask_segment_side})\n',
-
+			f'(TopMask_State {self.top_mask_state})\n',
+			f'(BotMask_State {self.bottom_mask_state})\n',
+			f'(TopPaste_State {self.top_mask_state})\n',
+			f'(BotPaste_State {self.bottom_paste_state})\n',
+			f'(CustomSwell_New {self.custom_swell:.6g})\n',
+			f'(RecoveryCode {self.recovery_code_int})\n',
 			f'(PadMask_TopSegments 0\n)\n', #TODO: implement PadMask_TopSegments
 			f'(PadMask_BotSegments 0\n)\n', #TODO: implement PadMask_BotSegments
-
 			f'{pads}\n',
 			f'{shapes}\n',
 			f'{holes}\n',
@@ -600,7 +647,6 @@ class DipTracePattern:
 			f'(Verification {verifications})\n',
 			f')',
 		])
-
 
 if __name__ == "__main__":
 	import os

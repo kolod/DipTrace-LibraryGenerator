@@ -1,15 +1,23 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
-
 import re
 from io import TextIOWrapper
-from typing import  Literal, AnyStr
+from typing import  Literal, AnyStr, Type
 from DipTraceUnits import mm2units, units2mm
 from DipTracePoint import DipTracePoint
 from DipTraceTerminal import DipTraceTerminal
 from DipTraceEnums import DipTraceHoleTypes, DipTracePadShapes, DipTracePadShapesNew
-from reHelper import reJoin, reInt, reString, reFloat, searchDoubleFloat, searchSingleBool, searchSingleFloat, searchSingleInt
+from reHelper import reBracketed, reJoin, reInt, reString, reFloat, searchDoubleFloat, searchSingleBool, searchSingleFloat, searchSingleInt
+
+# DisableTopMask     |  DisableTopPaste     |
+# DisableBottomMask  |  DisableBottomPaste  |
+#--------------------+----------------------+----------------
+#	Common           |    Common            |   "N", 0, 0
+#	Open             |    Solder            |   "N", 1, 1
+#	Tented           |    NoSolder          |   "Y", 2
+#	ByPasteMask      |    Segments          |   "N", 0, 3
+
 
 class DipTracePad:
 
@@ -41,6 +49,10 @@ class DipTracePad:
 		self.setPadAngle()
 		self.setPadShapePosition()
 		self.setPadCorner()
+		self.setTopMask()
+		self.setBottomMask()
+		self.setTopPaste()
+		self.setBottomPaste()
 
 		if match:
 			self.number = int(match.group(1))
@@ -154,13 +166,43 @@ class DipTracePad:
 		self.pad_corner = corner
 		return self
 
-	def move(self, x=0.0, y=0.0):
-		self.x += mm2units( x )
-		self.y += mm2units( y )
+	@staticmethod
+	def _mask(param1:bool=False, param2:int=0, param3:int=0, match:re.Match=None):
+		result= []
+		if match == None:
+			result.append('Y' if param1 else 'N')
+			result.append(param2)
+			if param3 != None:
+				result.append(param3)
+		else:
+			if match.lastindex >= 1: result.append(match.group(1))
+			if match.lastindex >= 2: result.append(int(match.group(2)))
+			if match.lastindex >= 3: result.append(int(match.group(3)))
+		return result
+
+	def setTopMask(self, param1:bool=False, param2:int=0, param3:int=0):
+		self.top_mask = self._mask(param1, param2, param3)
+		return self
+
+	def setBottomMask(self, param1:bool=False, param2:int=0, param3:int=0):
+		self.bottom_mask = self._mask(param1, param2, param3)
+		return self
+
+	def setTopPaste(self, param1:bool=False, param2:int=0, param3:int=0):
+		self.top_paste = self._mask(param1, param2, param3)
+		return self
+
+	def setBottomPaste(self, param1:bool=False, param2:int=0, param3:int=0):
+		self.bottom_paste = self._mask(param1, param2, param3)
 		return self
 
 	def addTerminal(self, terminal:DipTraceTerminal):
 		self.terminals.append(terminal)
+		return self
+
+	def move(self, x:float=0.0, y:float=0.0):
+		self.x += mm2units( x )
+		self.y += mm2units( y )
 		return self
 
 	@staticmethod
@@ -294,6 +336,18 @@ class DipTracePad:
 			elif tmp := searchSingleFloat(r'PadCorner', line):
 				self.pad_corner = float(tmp.group(1))
 
+			elif tmp := re.search(reBracketed(reJoin(r'DisableTopMask', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
+				self.top_mask = self._mask(match=tmp)
+
+			elif tmp := re.search(reBracketed(reJoin(r'DisableBottomMask', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
+				self.bottom_mask = self._mask(match=tmp)
+
+			elif tmp := re.search(reBracketed(reJoin(r'DisableTopPaste', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
+				self.top_paste = self._mask(match=tmp)
+
+			elif tmp := re.search(reBracketed(reJoin(r'DisableBottomPaste', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
+				self.bottom_paste = self._mask(match=tmp)
+
 		return self
 
 
@@ -304,6 +358,16 @@ class DipTracePad:
 		top_segmens    = '\n'
 		bottom_segmens = '\n'
 
+		def ff(value) -> str:
+			if type(value) == str: return f'"{value}"'
+			if type(value) == int: return str(value)
+			return ''
+
+		top_mask      = ' '.join([ff(v) for v in self.top_mask    ])
+		bottom_mask   = ' '.join([ff(v) for v in self.bottom_mask ])
+		top_paste     = ' '.join([ff(v) for v in self.top_paste   ])
+		bottom_paste  = ' '.join([ff(v) for v in self.bottom_paste])
+
 		return ''.join([
 			f'(Pad {self.number} "{self.name}" "{self.note}" {self.x:.5g} {self.y:.5g}\n',
 			f'(Number {self.number})\n',
@@ -311,7 +375,10 @@ class DipTracePad:
 			f'(Inverted "{self.inverted}")\n',
 			f'(Locked "{self.locked}")\n',
 			f'(Sided "{self.sided}")\n',
-
+			f'(DisableTopMask {top_mask})\n',
+			f'(DisableBottomMask {bottom_mask})\n',
+			f'(DisableTopPaste {top_paste})\n',
+			f'(DisableBottomPaste {bottom_paste})\n',
 			f'(CustomSwell {self.custom_swell:.5g})\n',
 			f'(CustomShrink {self.custom_swell_new:.5g})\n',
 			f'(CustomSwell_New {self.custom_shrink:.5g})\n',
