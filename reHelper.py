@@ -4,7 +4,7 @@
 import re
 from typing import AnyStr, Literal, Optional
 
-reTag         = r'\(([^ ]*) '
+reTag         = r'\((\w*)'
 reBool        = r'"([YN]?)"'
 reString      = r'"([^"]*)"'
 reFloat       = r'([-]*\d+(?:\.\d+)?)'
