@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
-
-from enum import Enum
 import textwrap
-from DipTraceUnits import *
-from DipTracePatternLibrary import *
+from reHelper import searchSingleString
+from DipTraceUnits import mm2units
+from DipTraceEnums import DipTracePinType, DipTracePinElectric, DipTracePinOrientation, DipTraceComponentPartType
+from DipTracePatternLibrary import DipTracePattern
+from DipTraceIndentation import DipTraceIndentation
 
 class DipTracePin:
 
@@ -198,20 +199,24 @@ class DipTraceComponent:
 		return self
 
 	def __str__(self) -> str:
-		result  = '      (Component\n'
-		for part in self.parts: result += str(part).format(self)
-		if hasattr(self, 'pattern'): result += textwrap.indent(str(self.pattern), '  ')
-		result += '      )\n'
-		return result
+		parts = '\n'.join([str(part) for part in self.parts])
+		pattern = str(self.pattern) if hasattr(self, 'pattern') else ''
+
+		return '\n'.join([
+			f'(Component\n',
+			f'{parts}\n',
+			f'{pattern}\n',
+			f')\n'
+		])
 
 
 class DipTraceComponentLibrary:
 
-	def __init__(self, name:str, hint:str=None):
-
-		self.name = name
-		self.hint = hint or name
+	def __init__(self, name:str='', hint:str=''):
 		self.components = []
+		self.name = name
+		self.hint = hint
+		super().__init__()
 
 	def addComponent(self, component:DipTraceComponent):
 		if type(component) is list:
@@ -240,7 +245,7 @@ class DipTraceComponentLibrary:
 		result += '  )\n'
 		result += '()\n'
 
-		return result
+		return result #DipTraceIndentation(result)
 
 	def save(self, filename:str):
 		with open(filename, 'w', encoding='utf-8') as f:
