@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import re
+from typing import Optional
 from reHelper import searchSingleString, reJoin, reInt
 from DipTracePattern import DipTracePattern
 from DipTraceIndentation import DipTraceIndentation
@@ -18,6 +19,12 @@ class DipTracePatternLibrary:
 	def addPattern(self, pattern:DipTracePattern):
 		self.patterns.append(pattern)
 		return self
+
+	def pattern(self, name:str) -> Optional[DipTracePattern]:
+		for pattern in self.patterns:
+			if name == pattern.name:
+				return pattern
+		return None
 
 	def save(self, filename:str) -> None:
 		with open(filename, 'w', encoding='utf-8') as f:
