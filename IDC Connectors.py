@@ -3,31 +3,37 @@
 
 import math
 from copy import deepcopy
-from DipTraceEnums import *
-from DipTracePatternShape import *
-from DipTracePatternLibrary import *
-from DipTraceComponentShape import *
-from DipTraceComponentLibrary import *
-
+from typing import List
+from DipTracePin import DipTracePin
+from DipTracePad import DipTracePad
+from DipTraceEnums import DipTraceHoleTypes, DipTraceLayerType, DipTraceTerminalShapes, DipTracePadShapes, DipTracePatternShapeType, DipTraceComponentShapeType
+from DipTracePattern import DipTracePattern
+from DipTrace3dModel import DipTrace3dModel
+from DipTraceTerminal import DipTraceTerminal
+from DipTraceComponent import DipTraceComponent
+from DipTraceIndentation import DipTraceIndentation
+from DipTracePatternShape import DipTracePatternShape
+from DipTraceComponentPart import DipTraceComponentPart
+from DipTracePatternLibrary import DipTracePatternLibrary
+from DipTraceComponentShape import DipTraceComponentShape
+from DipTraceComponentLibrary import DipTraceComponentLibrary
 
 class IDC_Connectors:
 
-	def __init__(self, name, pins):
+	def __init__(self, name:str, pins:List[int]):
 		self.pins             = pins
 		self.name             = name
 		self.patternlibrary   = DipTracePatternLibrary(name)
 		self.componentLibrary = DipTraceComponentLibrary(name)
+		super().__init__()
 
-	def terminal(self):
-		return DipTraceTerminal() \
-		.setShape(DipTraceTerminalShapes.Rectangle) \
-		.setSize(0.64, 0.64)
+	def _terminal(self) -> DipTraceTerminal:
+		return DipTraceTerminal().setShape(DipTraceTerminalShapes.Rectangle).setSize(0.64, 0.64)
 
-	def model(self, pins, isR=False):
-		return DipTrace3dModel('BH{1}-{0:02}.STEP'.format(pins, 'R' if isR else '')) \
-			.setRotation(90.0)
+	def _model(self, pins:int, isR:bool=False) -> DipTrace3dModel:
+		return DipTrace3dModel('BH{1}-{0:02}.STEP'.format(pins, 'R' if isR else '')).setRotation(90.0)
 
-	def pattern_shape(self, pins):
+	def _pattern_shape(self, pins:int) -> List[DipTracePatternShape]:
 		C      = 2.54 * int(pins/2 - 1)
 		A      = C + 10.14
 		bottom = (8.4 - 2.54) / 2
@@ -57,15 +63,15 @@ class IDC_Connectors:
 			.addPoint(-triag      , bottom + 3.0)
 
 		return [
-			deepcopy(shape_01).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
-			deepcopy(shape_02).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
-			deepcopy(shape_04).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
-			deepcopy(shape_01).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
-			deepcopy(shape_02).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
-			deepcopy(shape_01).setLineWidth(0.05).setLayer(DipTraceLayer.TopCourtyard)
+			deepcopy(shape_01).setLineWidth(0.25).setLayer(DipTraceLayerType.TopSilk),
+			deepcopy(shape_02).setLineWidth(0.25).setLayer(DipTraceLayerType.TopSilk),
+			deepcopy(shape_04).setLineWidth(0.25).setLayer(DipTraceLayerType.TopSilk),
+			deepcopy(shape_01).setLineWidth(0.12).setLayer(DipTraceLayerType.TopAssembly),
+			deepcopy(shape_02).setLineWidth(0.12).setLayer(DipTraceLayerType.TopAssembly),
+			deepcopy(shape_01).setLineWidth(0.05).setLayer(DipTraceLayerType.TopCourtyard)
 		]
 
-	def pattern_shape_r(self, pins):
+	def _pattern_shape_r(self, pins:int) -> List[DipTracePatternShape]:
 		C        = 2.54 * int(pins/2 - 1)
 		A        = C + 10.14
 		top      = 0.32 - 13.8
@@ -90,14 +96,14 @@ class IDC_Connectors:
 			.addPoint(middle + 2.5, top         )
 
 		return [
-			deepcopy(shape_01).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
-			deepcopy(shape_02).setLineWidth(0.25).setLayer(DipTraceLayer.TopSilk),
-			deepcopy(shape_01).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
-			deepcopy(shape_02).setLineWidth(0.12).setLayer(DipTraceLayer.TopAssembly),
-			deepcopy(shape_01).setLineWidth(0.05).setLayer(DipTraceLayer.TopCourtyard)
+			deepcopy(shape_01).setLineWidth(0.25).setLayer(DipTraceLayerType.TopSilk),
+			deepcopy(shape_02).setLineWidth(0.25).setLayer(DipTraceLayerType.TopSilk),
+			deepcopy(shape_01).setLineWidth(0.12).setLayer(DipTraceLayerType.TopAssembly),
+			deepcopy(shape_02).setLineWidth(0.12).setLayer(DipTraceLayerType.TopAssembly),
+			deepcopy(shape_01).setLineWidth(0.05).setLayer(DipTraceLayerType.TopCourtyard)
 		]
 
-	def pad(self, number):
+	def _pad(self, number:int) -> DipTracePad:
 		row    = int(number % 2)
 		column = int(number / 2)
 		x      = column *  2.54
@@ -109,10 +115,10 @@ class IDC_Connectors:
 		pad.setHole(DipTraceHoleTypes.Round, 1.13)
 		pad.setStandart(number != 0)
 		pad.setShape(DipTracePadShapes.Rectangle if number == 0 else DipTracePadShapes.Obround)
-		pad.addTerminal(self.terminal())
+		pad.addTerminal(self._terminal())
 		return pad
 
-	def pattern(self, pin_count, isR=False):
+	def _pattern(self, pin_count:int, isR:bool=False) -> DipTracePattern:
 		C = 2.54 * int(pin_count/2 - 1)
 		A = C + 10.14
 
@@ -120,27 +126,27 @@ class IDC_Connectors:
 		pattern.setSize(A, 8.4)
 
 		for pin in range(pin_count):
-			pattern.addPad(self.pad(pin))
+			pattern.addPad(self._pad(pin))
 
 		if isR:
-			pattern.addShape(self.pattern_shape_r(pin_count))
+			pattern.addShape(self._pattern_shape_r(pin_count))
 		else:
-			pattern.addShape(self.pattern_shape(pin_count))
+			pattern.addShape(self._pattern_shape(pin_count))
 
-		pattern.add3dModel(self.model(pin_count, isR))
+		pattern.add3dModel(self._model(pin_count, isR))
 
 		pattern.move(-(pin_count/2-1)*1.27, 1.27)
 
 		return pattern
 
-	def pin(self, pin_number):
+	def _pin(self, pin_number:int) -> DipTracePin:
 		pin = DipTracePin(pin_number)
 		pin.setPosition(0.0, int((pin_number-1)/2) * 2.54)
-		pin.setOrientation(DipTracePinOrientation.Right)
+		pin.setOrientation(DipTraceIndentation.Right)
 		pin.setLength(5.08)
 		return pin
 
-	def component_pin_shape(self, pin_number):
+	def _component_pin_shape(self, pin_number:int) -> List[DipTraceComponentShape]:
 		y = pin_number * 2.54
 
 		return [
@@ -158,14 +164,14 @@ class IDC_Connectors:
 				.setLocked(True)
 		]
 
-	def component_part(self, pin_count, number):
+	def _component_part(self, pin_count:int, number:int) -> List[DipTraceComponentShape] :
 		part = DipTraceComponentPart('Part {0}'.format(number))
 
 		for pin in range(number, pin_count, 2):
-			part.addPin(self.pin(pin+1))
+			part.addPin(self._pin(pin+1))
 
 		for pin in range(int(pin_count / 2)):
-			part.addShape(self.component_pin_shape(pin))
+			part.addShape(self._component_pin_shape(pin))
 
 		part.addShape([
 			DipTraceComponentShape(DipTraceComponentShapeType.Line)
@@ -178,21 +184,21 @@ class IDC_Connectors:
 
 		return part
 
-	def component(self, pin_count, isR=False):
+	def _component(self, pin_count:int, isR:bool=False) -> DipTraceComponent:
 		component = DipTraceComponent('BH{1}-{0:02}'.format(pin_count, 'R' if isR else ''), 'J')
-		for i in range(2): component.addPart(self.component_part(pin_count, i))
+		for i in range(2): component.addPart(self._component_part(pin_count, i))
 		return component
 
-	def run(self):
+	def run(self) -> None:
 		for pin_count in self.pins:
-			p = self.pattern(pin_count)
-			c = self.component(pin_count).setPattern(p)
+			p = self._pattern(pin_count)
+			c = self._component(pin_count).setPattern(p)
 			self.patternlibrary.addPattern(p)
 			self.componentLibrary.addComponent(c)
 
 		for pin_count in self.pins:
-			p = self.pattern(pin_count, True)
-			c = self.component(pin_count, True).setPattern(p)
+			p = self._pattern(pin_count, True)
+			c = self._component(pin_count, True).setPattern(p)
 			self.patternlibrary.addPattern(p)
 			self.componentLibrary.addComponent(c)
 
