@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 
 from io import TextIOWrapper
+from typing import List, Union
 from reHelper import searchSingleBool, searchSingleInt
 
 class DipTraceComponentLayer:
@@ -21,12 +22,18 @@ class DipTraceComponentLayer:
 		self.number = number
 		return self
 
-	def addPin(self, pin:int):
-		self.pins.append(pin)
+	def addPin(self, pin:Union[int,List[int]]):
+		if type(pin) == list:
+			self.pins.extend(pin)
+		else:
+			self.pins.append(pin)
 		return self
 
-	def addShape(self, shape:int):
-		self.shapes.append(shape)
+	def addShape(self, shape:Union[int,List[int]]):
+		if type(shape) == list:
+			self.shapes.extend(shape)
+		else:
+			self.shapes.append(shape)
 		return self
 
 	def load(self, datafile:TextIOWrapper):

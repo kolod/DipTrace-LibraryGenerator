@@ -3,7 +3,7 @@
 
 from DipTraceCategoryType import DipTraceCategoryType
 from DipTracePatternShape import DipTracePatternShape
-import textwrap
+from typing import List, Union
 from reHelper import searchSingleString
 from DipTraceUnits import mm2units
 from DipTraceEnums import DipTracePinType, DipTracePinElectric, DipTracePinOrientation, DipTraceComponentPartType
@@ -28,7 +28,7 @@ class DipTraceComponentLibrary:
 		self.hint = hint
 		return self
 
-	def addComponent(self, component:DipTraceComponent):
+	def addComponent(self, component:Union[DipTraceComponent, List[DipTraceComponent]]):
 		if type(component) is list:
 			self.components.extend(component)
 		else:

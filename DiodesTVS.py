@@ -1,18 +1,18 @@
 #!/usr/'bi'n/python3
 #-*- coding: utf-8 -*-
 
-from DipTracePad import DipTracePad
 import math
-from DipTraceUnits import inch2mm
-from typing import List, Pattern
+from typing import List
+from DipTracePad import DipTracePad
 from DipTracePin import DipTracePin
+from DipTraceUnits import inch2mm
 from DipTraceEnums import DipTracePadTypes, DipTracePinOrientation, DipTraceComponentShapeType
 from DipTraceComponent import DipTraceComponent
 from DipTraceComponentPart import DipTraceComponentPart
 from DipTracePatternLibrary import DipTracePatternLibrary
 from DipTraceComponentShape import DipTraceComponentShape
-from DipTraceComponentLibrary import DipTraceComponentLibrary
 from DipTraceComponentLayer import DipTraceComponentLayer
+from DipTraceComponentLibrary import DipTraceComponentLibrary
 
 class SMAJ:
 	_data = [

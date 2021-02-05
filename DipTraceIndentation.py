@@ -67,13 +67,4 @@ def DipTraceIndentation(library:str) -> str:
 
 
 if __name__ == "__main__":
-
-	# Test component library
-	with open('test.component.asc', 'r', encoding="cp1251", errors='ignore') as input:
-		with open('test.component.new.asc', 'w', encoding="cp1251", errors='ignore') as output:
-			output.write(DipTraceIndentation(input.read()))
-
-	# Test pattern library
-	with open('test.pattern.asc', 'r', encoding="cp1251", errors='ignore') as input:
-		with open('test.pattern.new.asc', 'w', encoding="cp1251", errors='ignore') as output:
-			output.write(DipTraceIndentation(input.read()))
+	pass

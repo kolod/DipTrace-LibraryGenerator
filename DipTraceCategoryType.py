@@ -32,5 +32,4 @@ class DipTraceCategoryType:
 			return f'(CategoryTypeType "{self.unknownString1}" "{self.unknownString2}" {self.unknownInt1} {self.unknownInt2})'
 
 if __name__ == "__main__":
-	import os
-	os.system('DipTracePatternLibrary.py')
+	pass

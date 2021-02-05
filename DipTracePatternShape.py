@@ -45,18 +45,18 @@ class DipTracePatternShape:
 		super().__init__()
 
 	def setType(self, shape:DipTracePatternShapeType=DipTracePatternShapeType.Null):
-		self.shape = type
+		self.shape = shape
 		return self
 
-	def setLocked(self, state=False):
+	def setLocked(self, state:bool=False):
 		self.locked = 'Y' if state else 'N'
 		return self
 
-	def setEnabled(self, state=True):
+	def setEnabled(self, state:bool=True):
 		self.enabled = 'Y' if state else 'N'
 		return self
 
-	def setAllLayers(self, state=False):
+	def setAllLayers(self, state:bool=False):
 		self.all_layers = 'Y' if state else 'N'
 		return self
 
@@ -64,29 +64,24 @@ class DipTracePatternShape:
 		self.width = mm2units(width)
 		return self
 
-	def setGroup(self, group=-1):
+	def setGroup(self, group:int=-1):
 		self.group = group
 		return self
 
-	def setLineWidth(self, width=0.25):
+	def setLineWidth(self, width:float=0.25):
 		self.line_width = mm2units( width )
 		return self
 
-	def setLayer(self, layer=DipTraceLayerType.TopSilk):
+	def setLayer(self, layer:DipTraceLayerType=DipTraceLayerType.TopSilk):
 		self.layer = layer
 		return self
 
-	def addPoint(self, x, y):
+	def addPoint(self, x:float, y:float):
 		self.points.append(DipTracePoint(x, y))
 		return self
 
-	def addPointNew(self, x, y):
+	def addPointNew(self, x:float, y:float):
 		self.points_new.append(DipTracePoint(x, y))
-		return self
-
-	def move(self, x=0.0, y=0.0):
-		for point in self.points:
-			point.move(x, y)
 		return self
 
 	def setText(self, text:str=''):
@@ -105,7 +100,7 @@ class DipTracePatternShape:
 		self.font_size    = size
 		return self
 
-	def setTextAngle(self, align=DipTraceTextAlign.Left):
+	def setTextAngle(self, align:DipTraceTextAlign=DipTraceTextAlign.Left):
 		self.text_align   = align
 		return self
 
@@ -121,12 +116,17 @@ class DipTracePatternShape:
 		self.text_horiz   = horizontal
 		return self
 
-	def setTextVertical(self, vertical=0):
+	def setTextVertical(self, vertical:float=0):
 		self.text_vert    = vertical
 		return self
 
 	def setTextWidth(self, width:float=1.0):
 		self.text_width = width
+		return self
+
+	def move(self, x:float=0.0, y:float=0.0):
+		for point in self.points:
+			point.move(x, y)
 		return self
 
 	@staticmethod

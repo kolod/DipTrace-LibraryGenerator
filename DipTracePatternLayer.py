@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 
 from io import TextIOWrapper
+from typing import List, Union
 from reHelper import searchSingleBool, searchSingleInt
 
 class DipTracePatternLayer:
@@ -22,16 +23,25 @@ class DipTracePatternLayer:
 		self.number = number
 		return self
 
-	def addPad(self, pad:int):
-		self.pads.append(pad)
+	def addPad(self, pad:Union[int, List[int]]):
+		if type(pad) == list:
+			self.pads.extend(pad)
+		else:
+			self.pads.append(pad)
 		return self
 
-	def addShape(self, shape:int):
-		self.shapes.append(shape)
+	def addShape(self, shape:Union[int, List[int]]):
+		if type(shape) == list:
+			self.shapes.extend(shape)
+		else:
+			self.shapes.append(shape)
 		return self
 
-	def addHole(self, hole:int):
-		self.holes.append(hole)
+	def addHole(self, hole:Union[int, List[int]]):
+		if type(hole) == list:
+			self.holes.extend(hole)
+		else:
+			self.holes.append(hole)
 		return self
 
 	def load(self, datafile:TextIOWrapper):

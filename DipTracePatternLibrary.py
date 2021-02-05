@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
-from DipTracePad import DipTracePad
 import re
 from typing import Optional
 from reHelper import searchSingleString, reJoin, reInt
+from DipTracePad import DipTracePad
 from DipTracePattern import DipTracePattern
 from DipTraceIndentation import DipTraceIndentation
 
@@ -75,8 +75,4 @@ class DipTracePatternLibrary:
 
 
 if __name__ == "__main__":
-	lib = DipTracePatternLibrary()
-	lib.load('test.asc')
-	lib.save('test_new.asc')
-	#print(lib)
 	pass

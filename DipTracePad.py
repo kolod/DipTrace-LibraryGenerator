@@ -3,7 +3,7 @@
 
 import re
 from io import TextIOWrapper
-from typing import  Literal, AnyStr, Type
+from typing import  Literal, AnyStr
 from DipTraceUnits import mm2units, units2mm
 from DipTracePoint import DipTracePoint
 from DipTraceTerminal import DipTraceTerminal
@@ -459,5 +459,4 @@ class DipTracePad:
 
 
 if __name__ == "__main__":
-	import os
-	os.system('DipTracePatternLibrary.py')
+	pass

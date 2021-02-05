@@ -48,6 +48,20 @@ class DipTraceComponentPart:
 		self.enabled = 'Y' if state else 'N'
 		return self
 
+	def setShowNumbers(self, state:bool=True):
+		self.show_numbers = 1 if state else 0
+		return self
+
+	def setOrigin(self, x:float=0.0, y:float=0.0):
+		self.origin_x = mm2units( x )
+		self.origin_y = mm2units( y )
+		return self
+
+	def setSize(self, width:float=0.0, height:float=0.0):
+		self.width  = mm2units(  width )
+		self.height = mm2units( height )
+		return self
+
 	def addPin(self, pin:Union[DipTracePin, List[DipTracePin]]):
 		if type(pin) is list:
 			self.pins.extend(pin)
@@ -67,20 +81,6 @@ class DipTraceComponentPart:
 			self.shapes.extend(shape)
 		else:
 			self.shapes.append(shape)
-		return self
-
-	def setShowNumbers(self, state:bool=True):
-		self.show_numbers = 1 if state else 0
-		return self
-
-	def setOrigin(self, x:float=0.0, y:float=0.0):
-		self.origin_x = mm2units( x )
-		self.origin_y = mm2units( y )
-		return self
-
-	def setSize(self, width:float=0.0, height:float=0.0):
-		self.width  = mm2units(  width )
-		self.height = mm2units( height )
 		return self
 
 	def __str__(self) -> str:

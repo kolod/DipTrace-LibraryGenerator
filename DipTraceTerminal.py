@@ -27,30 +27,30 @@ class DipTraceTerminal:
 		self.y = mm2units(y)
 		return self
 
-	def move(self, x:float=0.0, y:float=0.0):
-		self.x += mm2units( x )
-		self.y += mm2units( y )
-		return self
-
 	def setSize(self, width:float=0.0, height:float=0.0):
 		self.width  = mm2units( width )
 		self.height = mm2units( height )
 		return self
 
-	def setShape(self, shape=DipTraceTerminalShapes.Null):
+	def setShape(self, shape:DipTraceTerminalShapes=DipTraceTerminalShapes.Null):
 		self.shape = shape
 		return self
 
-	def setAngle(self, angle=0.0):
+	def setAngle(self, angle:float=0.0):
 		self.angle = angle
 		return self
 
-	def setCorner(self, corner=0.0):
+	def setCorner(self, corner:float=0.0):
 		self.corner = corner
 		return self
 
 	def addPoint(self, x:float=0.0, y:float=0.0):
 		self.points.append(DipTracePoint(x, y))
+		return self
+
+	def move(self, x:float=0.0, y:float=0.0):
+		self.x += mm2units( x )
+		self.y += mm2units( y )
 		return self
 
 	def load(self, datafile:TextIOWrapper):
@@ -87,7 +87,7 @@ class DipTraceTerminal:
 
 		return self
 
-	def __str__(self):
+	def __str__(self) -> str:
 
 		points = '\n'.join([str(point) for point in self.points])
 

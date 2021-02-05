@@ -20,54 +20,55 @@ class DipTraceComponentShape:
 		self.setTextAlign()
 		self.setFont()
 		self.setVector()
+		super().__init__()
 
-	def setLocked(self, state=False):
+	def setLocked(self, state:bool=False):
 		self.locked = 'Y' if state else 'N'
 		return self
 
-	def setEnabled(self, state=True):
+	def setEnabled(self, state:bool=True):
 		self.enabled = 'Y' if state else 'N'
 		return self
 
-	def setGroup(self, group=-1):
+	def setGroup(self, group:int=-1):
 		self.group = group
 		return self
 
-	def setLineWidth(self, width=0.25):
+	def setLineWidth(self, width:float=0.25):
 		self.line_width = mm2units( width )
-		return self
-
-	def addPoint(self, x, y):
-		self.points.append(DipTracePoint(x, y))
-		return self
-
-	def move(self, x=0.0, y=0.0):
-		for point in self.points:
-			point.move(x, y)
 		return self
 
 	def setText(self, text:str=''):
 		self.text:str = text
 		return self
 
-	def setTextAlign(self, align=DipTraceTextAlign.Center):
+	def setTextAlign(self, align:DipTraceTextAlign=DipTraceTextAlign.Center):
 		self.text_align = align
 		return self
 
-	def setFont(self, font='Tahoma', size=8, spacing=1.2, angle=0.0):
+	def setFont(self, font:str='Tahoma', size:int=8, spacing:float=1.2, angle:float=0.0):
 		self.font         = font
 		self.font_size    = size
 		self.text_spacing = spacing
 		self.text_angle   = angle
 		return self
 
-	def setVector(self, state=True):
+	def setVector(self, state:bool=True):
 		self.vector = 'Y' if state else 'N'
 		return self
 
-	def setTextPosition(self, x=0.0, y=0.0):
+	def setTextPosition(self, x:float=0.0, y:float=0.0):
 		self.text_horiz   = x
 		self.text_vert    = y
+		return self
+
+	def addPoint(self, x:float, y:float):
+		self.points.append(DipTracePoint(x, y))
+		return self
+
+	def move(self, x:float=0.0, y:float=0.0):
+		for point in self.points:
+			point.move(x, y)
 		return self
 
 	def __str__(self):

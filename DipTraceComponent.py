@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
+from typing import List, Union
 from DipTracePatternLibrary import DipTracePattern
 from DipTraceComponentPart import DipTraceComponentPart
-
 
 class DipTraceComponent:
 
@@ -14,12 +14,15 @@ class DipTraceComponent:
 		self.parts  = []
 		super().__init__()
 
-	def addPart(self, part:DipTraceComponentPart):
-		self.parts.append(part)
-		return self
-
 	def setPattern(self, pattern:DipTracePattern):
 		self.pattern = pattern
+		return self
+
+	def addPart(self, part:Union[DipTraceComponentPart, List[DipTraceComponentPart]]):
+		if type(part) == list:
+			self.parts.extend(part)
+		else:
+			self.parts.append(part)
 		return self
 
 	def __str__(self) -> str:
