@@ -27,11 +27,11 @@ class DipTracePatternLibrary:
 		return None
 
 	def save(self, filename:str) -> None:
-		with open(filename, 'w', encoding='utf-8') as f:
-			f.write(str(self))
+		with open(filename, 'w', encoding='cp1251') as datafile:
+			datafile.write(str(self))
 
 	def load(self, filename:str):
-		with open(filename, 'r', encoding='utf-8') as datafile:
+		with open(filename, 'r', encoding='cp1251') as datafile:
 			while line := datafile.readline().strip():
 
 				if tmp := searchSingleString(r'Name', line):
