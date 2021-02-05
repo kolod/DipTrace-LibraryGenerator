@@ -13,5 +13,11 @@ def mm2units(value):
 def units2mm(value):
 	return value / 3
 
+def inch2mm(value):
+	return value * 25.4
+
+def mm2inch(value):
+	return value / 25.4
+
 if __name__ == "__main__":
 	pass

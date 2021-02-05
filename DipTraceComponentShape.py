@@ -46,8 +46,8 @@ class DipTraceComponentShape:
 			point.move(x, y)
 		return self
 
-	def setText(self, text=''):
-		self.text = text
+	def setText(self, text:str=''):
+		self.text:str = text
 		return self
 
 	def setTextAlign(self, align=DipTraceTextAlign.Center):
@@ -74,6 +74,7 @@ class DipTraceComponentShape:
 
 		points     = '\n'.join([str(point) for point in self.points])
 		points_new = '\n'.join([str(point) for point in self.points])
+		text_lines = '\n'.join(f'(pt "{line}")' for line in (self.text if len(self.text) else "\n").splitlines())
 
 		return ''.join([
 			f'(Shape {"{0}"}\n',
@@ -97,6 +98,7 @@ class DipTraceComponentShape:
 			f'(TextAlign {self.text_align.value})\n',
 			f'(LineSpacing {self.text_spacing})\n',
 			f'(Group -1)\n',
+			f'(TextLines\n{text_lines}\n)\n',
 			f'(Points_New\n{points_new}\n)\n',
 			f')\n'
 		])

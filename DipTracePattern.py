@@ -13,14 +13,14 @@ from DipTracePoint import DipTracePoint
 from DipTrace3dModel import DipTrace3dModel
 from DipTracePatternShape import DipTracePatternShape
 from DipTraceEnums import DipTracePatternType, DipTracePatternShapeType, DipTraceHoleTypes, DipTracePadShapes, DipTracePadShapesNew
-from DipTraceLayer import DipTraceLayer
+from DipTracePatternLayer import DipTracePatternLayer
 from DipTraceTerminal import DipTraceTerminal
 from DipTraceCategoryType import DipTraceCategoryType
 from DipTraceDimension import DipTraceDimension
 
 class DipTracePattern:
 
-	isComponent = False
+	isComponent:bool = False
 
 	def __init__(self, match:re.Match[AnyStr]=None):
 		self.pads         = []
@@ -64,6 +64,7 @@ class DipTracePattern:
 		self.setPadShapePosition()
 		self.setPadCorner()
 		self.setCustomSwell()
+		self.setCustomShrink()
 		self.setMaskState()
 		self.setPasteState()
 
@@ -191,6 +192,10 @@ class DipTracePattern:
 		self.custom_swell = custom_swell
 		return self
 
+	def setCustomShrink(self, custom_shrink:float=0.0):
+		self.custom_shrink = custom_shrink
+		return self
+
 	def setMaskState(self, top:int=0, bottom:int=0):
 		self.top_mask_state    = top
 		self.bottom_mask_state = bottom
@@ -228,6 +233,13 @@ class DipTracePattern:
 		self.mask_segment_side = segment_side
 		return self
 
+	def prependPad(self, pad):
+		if type(pad) is list:
+			for p in pad: self.pads.insert(0, p)
+		else:
+			self.pads.insert(0, pad)
+		return self
+
 	def addPad(self, pad):
 		if type(pad) is list:
 			self.pads.extend(pad)
@@ -254,7 +266,7 @@ class DipTracePattern:
 		self.points.append(DipTracePoint(x, y))
 		return self
 
-	def addLayer(self, layer:DipTraceLayer):
+	def addLayer(self, layer:DipTracePatternLayer):
 		self.layers.append(layer)
 		return self
 
@@ -371,7 +383,7 @@ class DipTracePattern:
 					if line == ')':
 						break
 					if line == '(Layer':
-						self.addLayer(DipTraceLayer().load(datafile))
+						self.addLayer(DipTracePatternLayer().load(datafile))
 
 			elif line == '(Pads':
 				while line := datafile.readline().strip():
@@ -535,6 +547,9 @@ class DipTracePattern:
 			elif tmp := searchSingleFloat(r'CustomSwell_New', line):
 				self.custom_swell = float(tmp.group(1))
 
+			elif tmp := searchSingleFloat(r'CustomShrink_New', line):
+				self.custom_shrink = float(tmp.group(1))
+
 			elif tmp := searchSingleInt(r'TopMask_State', line):
 				self.top_mask_state = int(tmp.group(1))
 
@@ -552,101 +567,174 @@ class DipTracePattern:
 
 	def __str__(self) -> str:
 
-		points     = '\n'.join([str(point)     for point     in self.points    ])
-		points_new = '\n'.join([str(point)     for point     in self.pointsNew ])
-		pads       = '\n'.join([str(pad)       for pad       in self.pads      ])
-		shapes     = '\n'.join([str(shape)     for shape     in self.shapes    ])
-		holes      = '\n'.join([str(hole)      for hole      in self.holes     ])
-		layers     = '\n'.join([str(layer)     for layer     in self.layers    ])
-		terminals  = '\n'.join([str(terminal)  for terminal  in self.terminals ])
-		categories = '\n'.join([str(category)  for category  in self.categories])
-		dimensions = '\n'.join([str(dimension) for dimension in self.dimensions])
-
-		holes   = '(Holes\n'   + holes   + '\n)\n' if len(holes)   else ''
-		pads    = '(Pads\n'    + pads    + '\n)\n' if len(pads)    else ''
-		shapes  = '(Shapes\n'  + shapes  + '\n)\n' if len(shapes)  else ''
-
-		model   = str(self.model) + '\n' if hasattr(self, 'model') else ''
-
+		points        = '\n'.join([str(point)     for point     in self.points    ])
+		points_new    = '\n'.join([str(point)     for point     in self.pointsNew ])
+		shapes        = '\n'.join([str(shape)     for shape     in self.shapes    ])
+		holes         = '\n'.join([str(hole)      for hole      in self.holes     ])
+		layers        = '\n'.join([str(layer)     for layer     in self.layers    ])
+		terminals     = '\n'.join([str(terminal)  for terminal  in self.terminals ])
+		categories    = '\n'.join([str(category)  for category  in self.categories])
+		dimensions    = '\n'.join([str(dimension) for dimension in self.dimensions])
+		pads          = '\n'.join([str(self.pads[i]).format(i) for i in range(len(self.pads))])
+		model         = str(self.model) + '\n' if hasattr(self, 'model') else ''
 		user_fields   = '\n'.join(f'(UserField "{field[0]}" "{field[1]}" {field[2]})' for field in self.user_fields)
 		verifications = ' '.join(f'"{verification}"' for verification in self.verifications)
+		connections   = ''
 
-		return ''.join([
-			f'(Pattern "{self.name}" "{self.ref}"\n',
-			f'(Value "{self.value}")\n',
-			f'(VariableParameter1 "{self.variableParameters[0]}")\n',
-			f'(VariableParameter2 "{self.variableParameters[1]}")\n',
-			f'(VariableParameter3 "{self.variableParameters[2]}")\n',
-			f'(VariableParameter4 "{self.variableParameters[3]}")\n',
-			f'(Width {self.width:.6g})\n',
-			f'(Height {self.height:.6g})\n',
-			f'(Spacing1 {self.spacings[0]:.6g})\n',
-			f'(Spacing2 {self.spacings[1]:.6g})\n',
-			f'(VariableParameter5 "{self.variableParameters[4]}")\n',
-			f'(Spacing3 {self.spacings[2]:.6g})\n',
-			f'(LockProperties "{self.locked}")\n',
-			f'(PatternOrientation {self.orientation:.6g})\n',
-			f'(Number1 {self.numbers[0]})\n',
-			f'(Number2 {self.numbers[1]})\n',
-			f'(Type {self.type.value})\n',
-			f'(PadWidth {self.pad_width})\n',
-			f'(PadHeight {self.pad_height})\n',
-			f'(PadShape {self.shape.value})\n',
-			f'(SurfacePad "{self.surface}")\n',
-			f'(PadHole {self.hole_width:.6g})\n',
-			f'(PadHoleH {self.hole_height:.6g})\n',
-			f'(PadHoleType {self.hole_type.value})\n',
-			f'(PadPoints\n{points}\n)\n',
-			f'(PadPoints_New\n{points_new}\n)\n',
-			f'(PadShape_New {self.shape_new.value})\n',
-			f'(PadAngle {self.pad_angle:.6g})\n',
-			f'(PadShape_X {self.pad_shape_x:.6g})\n',
-			f'(PadShape_Y {self.pad_shape_y:.6g})\n',
-			f'(PadCorner {self.pad_corner:.6g})\n',
-			f'(PadWidth_New {self.pad_width_new})\n',
-			f'(PadHeight_New {self.pad_height_new})\n',
-			f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n',
-			f'(PadMask_Percent {self.mask_percent:.6g})\n',
-			f'(PadMask_EdgeGap {self.mask_edge_gap:.6g})\n',
-			f'(PadMask_SegmentGap {self.mask_segment_gap:.6g})\n',
-			f'(PadMask_SegmentSide {self.mask_segment_side})\n',
-			f'(TopMask_State {self.top_mask_state})\n',
-			f'(BotMask_State {self.bottom_mask_state})\n',
-			f'(TopPaste_State {self.top_mask_state})\n',
-			f'(BotPaste_State {self.bottom_paste_state})\n',
-			f'(CustomSwell_New {self.custom_swell:.6g})\n',
-			f'(RecoveryCode {self.recovery_code_int})\n',
-			f'(PadMask_TopSegments 0\n)\n', #TODO: implement PadMask_TopSegments
-			f'(PadMask_BotSegments 0\n)\n', #TODO: implement PadMask_BotSegments
-			f'{pads}\n',
-			f'{shapes}\n',
-			f'{holes}\n',
-			f'(OriginX {self.orgin_x:.6g})\n',
-			f'(OriginY {self.orgin_y:.6g})\n',
-			f'(OriginCross "{self.orgin_cross}")\n',
-			f'(OriginCircle "{self.orgin_circle}")\n',
-			f'(OriginCommon {self.orgin_common:.6g})\n',
-			f'(OriginCourtyard {self.orgin_courtyard:.6g})\n',
-			f'(Name_Description "{self.description}")\n',
-			f'(Name_Unique "{self.unique_name}")\n',
-			f'(RecoveryCode "{self.recovery_code}")\n',
-			f'(RecoveryCode_Generator "{self.recovery_generator}")\n',
-			f'(RecoveryCode_Model "{self.recovery_model}")\n',
-			f'(Manufacturer "{self.manufacturer}")\n',
-			f'(Pattern_Groups\n)\n',
-			f'(Layers\n{layers}\n)\n',
-			f'(UserFields\n{user_fields}\n)\n',
-			f'(Dimensions\n{dimensions}\n)\n', #TODO: Add Dimensions
-			f'{model}\n',
-			f'(Mounting {self.mounting})\n',
-			f'(Datasheet "{self.datasheet}")\n',
-			f'(CategoryName "{self.category_name}")\n',
-			f'(CategoryIndex {self.category_index})\n',
-			f'(CategoryTypes {len(self.categories)}\n{categories}\n)\n',
-			f'(PossibleNames {len(self.names)}\n)\n',
-			f'(Verification {verifications})\n',
-			f')',
-		])
+		if self.isComponent:
+			return ''.join([
+				f'(Pattern "{self.name}"\n',
+				f'(Type {self.type.value})\n',
+				f'(VariableParameter1 "{self.variableParameters[0]}")\n',
+				f'(VariableParameter2 "{self.variableParameters[1]}")\n',
+				f'(VariableParameter3 "{self.variableParameters[2]}")\n',
+				f'(VariableParameter4 "{self.variableParameters[3]}")\n',
+				f'(InternalConnections\n{connections})\n',
+				f'(Number1 {self.numbers[0]})\n',
+				f'(Number2 {self.numbers[1]})\n',
+				f'(Spacing1 {self.spacings[0]:.6g})\n',
+				f'(Spacing2 {self.spacings[1]:.6g})\n',
+				f'(VariableParameter5 "{self.variableParameters[4]}")\n',
+				f'(Spacing3 {self.spacings[2]:.6g})\n',
+				f'(LockProperties "{self.locked}")\n',
+				f'(PatternOrientation {self.orientation:.6g})\n',
+				f'(Width {self.width:.6g})\n',
+				f'(Height {self.height:.6g})\n',
+				f'(PadWidth {self.pad_width})\n',
+				f'(PadHeight {self.pad_height})\n',
+				f'(PadShape {self.shape.value})\n',
+				f'(SurfacePad "{self.surface}")\n',
+				f'(PadHole {self.hole_width:.6g})\n',
+				f'(PadHoleH {self.hole_height:.6g})\n',
+				f'(PadHoleType {self.hole_type.value})\n',
+				f'(PadPoints\n{points}\n)\n',
+				f'(PadPoints_New\n{points_new}\n)\n',
+				f'(PadShape_New {self.shape_new.value})\n',
+				f'(PadAngle {self.pad_angle:.6g})\n',
+				f'(PadShape_X {self.pad_shape_x:.6g})\n',
+				f'(PadShape_Y {self.pad_shape_y:.6g})\n',
+				f'(PadCorner {self.pad_corner:.6g})\n',
+				f'(PadWidth_New {self.pad_width_new})\n',
+				f'(PadHeight_New {self.pad_height_new})\n',
+				f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n',
+				f'(TopMask_State {self.top_mask_state})\n',
+				f'(BotMask_State {self.bottom_mask_state})\n',
+				f'(TopPaste_State {self.top_mask_state})\n',
+				f'(BotPaste_State {self.bottom_paste_state})\n',
+				f'(CustomSwell_New {self.custom_swell:.6g})\n',
+				f'(CustomShrink_New {self.custom_shrink:.6g})\n',
+				f'(PadMask_Percent {self.mask_percent:.6g})\n',
+				f'(PadMask_EdgeGap {self.mask_edge_gap:.6g})\n',
+				f'(PadMask_SegmentGap {self.mask_segment_gap:.6g})\n',
+				f'(PadMask_SegmentSide {self.mask_segment_side})\n',
+				f'(PadMask_TopSegments 0\n)\n', #TODO: implement PadMask_TopSegments
+				f'(PadMask_BotSegments 0\n)\n', #TODO: implement PadMask_BotSegments
+				f'(OriginX {self.orgin_x:.6g})\n',
+				f'(OriginY {self.orgin_y:.6g})\n',
+				f'(Origin_Cross "{self.orgin_cross}")\n',
+				f'(Origin_Circle "{self.orgin_circle}")\n',
+				f'(Origin_Common {self.orgin_common:.6g})\n',
+				f'(Origin_Courtyard {self.orgin_courtyard:.6g})\n',
+				f'(Name_Description "{self.description}")\n',
+				f'(Name_Unique "{self.unique_name}")\n',
+				f'(RecoveryCode "{self.recovery_code}")\n',
+				f'(RecoveryCode_Generator "{self.recovery_generator}")\n',
+				f'(RecoveryCode_Model "{self.recovery_model}")\n',
+				f'(Manufacturer "{self.manufacturer}")\n',
+				f'(Pattern_Groups\n)\n',
+				f'(Pads\n{pads}\n)\n'     if len(self.pads)    else '',
+
+				f'(Shapes\n{shapes}\n)\n' if len(self.shapes)  else '',
+				f'(Holes\n{holes}\n)\n'   if len(self.holes)   else '',
+				f'(Layers\n{layers}\n)\n',
+				f'(UserFields\n{user_fields}\n)\n',
+				f'(Dimensions\n{dimensions}\n)\n', #TODO: Add Dimensions
+				f'{model}\n',
+				f'(Mounting {self.mounting})\n',
+
+				f'(CategoryName "{self.category_name}")\n',
+				f'(CategoryIndex {self.category_index})\n',
+				f'(CategoryTypes {len(self.categories)}\n{categories}\n)\n',
+				f'(PossibleNames {len(self.names)}\n)\n',
+				f')',
+			])
+		else:
+			return ''.join([
+				f'(Pattern "{self.name}" "{self.ref}"\n',
+				f'(Value "{self.value}")\n',
+				f'(VariableParameter1 "{self.variableParameters[0]}")\n',
+				f'(VariableParameter2 "{self.variableParameters[1]}")\n',
+				f'(VariableParameter3 "{self.variableParameters[2]}")\n',
+				f'(VariableParameter4 "{self.variableParameters[3]}")\n',
+				f'(Width {self.width:.6g})\n',
+				f'(Height {self.height:.6g})\n',
+				f'(Spacing1 {self.spacings[0]:.6g})\n',
+				f'(Spacing2 {self.spacings[1]:.6g})\n',
+				f'(VariableParameter5 "{self.variableParameters[4]}")\n',
+				f'(Spacing3 {self.spacings[2]:.6g})\n',
+				f'(LockProperties "{self.locked}")\n',
+				f'(PatternOrientation {self.orientation:.6g})\n',
+				f'(Number1 {self.numbers[0]})\n',
+				f'(Number2 {self.numbers[1]})\n',
+				f'(Type {self.type.value})\n',
+				f'(PadWidth {self.pad_width})\n',
+				f'(PadHeight {self.pad_height})\n',
+				f'(PadShape {self.shape.value})\n',
+				f'(SurfacePad "{self.surface}")\n',
+				f'(PadHole {self.hole_width:.6g})\n',
+				f'(PadHoleH {self.hole_height:.6g})\n',
+				f'(PadHoleType {self.hole_type.value})\n',
+				f'(PadPoints\n{points}\n)\n',
+				f'(PadPoints_New\n{points_new}\n)\n',
+				f'(PadShape_New {self.shape_new.value})\n',
+				f'(PadAngle {self.pad_angle:.6g})\n',
+				f'(PadShape_X {self.pad_shape_x:.6g})\n',
+				f'(PadShape_Y {self.pad_shape_y:.6g})\n',
+				f'(PadCorner {self.pad_corner:.6g})\n',
+				f'(PadWidth_New {self.pad_width_new})\n',
+				f'(PadHeight_New {self.pad_height_new})\n',
+				f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n',
+				f'(PadMask_Percent {self.mask_percent:.6g})\n',
+				f'(PadMask_EdgeGap {self.mask_edge_gap:.6g})\n',
+				f'(PadMask_SegmentGap {self.mask_segment_gap:.6g})\n',
+				f'(PadMask_SegmentSide {self.mask_segment_side})\n',
+				f'(TopMask_State {self.top_mask_state})\n',
+				f'(BotMask_State {self.bottom_mask_state})\n',
+				f'(TopPaste_State {self.top_mask_state})\n',
+				f'(BotPaste_State {self.bottom_paste_state})\n',
+				f'(CustomSwell_New {self.custom_swell:.6g})\n',
+				f'(RecoveryCode {self.recovery_code_int})\n',
+				f'(PadMask_TopSegments 0\n)\n', #TODO: implement PadMask_TopSegments
+				f'(PadMask_BotSegments 0\n)\n', #TODO: implement PadMask_BotSegments
+				f'(Pads\n{pads}\n)\n'     if len(self.pads)    else '',
+				f'(Shapes\n{shapes}\n)\n' if len(self.shapes)  else '',
+				f'(Holes\n{holes}\n)\n'   if len(self.holes)   else '',
+				f'(OriginX {self.orgin_x:.6g})\n',
+				f'(OriginY {self.orgin_y:.6g})\n',
+				f'(OriginCross "{self.orgin_cross}")\n',
+				f'(OriginCircle "{self.orgin_circle}")\n',
+				f'(OriginCommon {self.orgin_common:.6g})\n',
+				f'(OriginCourtyard {self.orgin_courtyard:.6g})\n',
+				f'(Name_Description "{self.description}")\n',
+				f'(Name_Unique "{self.unique_name}")\n',
+				f'(RecoveryCode "{self.recovery_code}")\n',
+				f'(RecoveryCode_Generator "{self.recovery_generator}")\n',
+				f'(RecoveryCode_Model "{self.recovery_model}")\n',
+				f'(Manufacturer "{self.manufacturer}")\n',
+				f'(Pattern_Groups\n)\n',
+				f'(Layers\n{layers}\n)\n',
+				f'(UserFields\n{user_fields}\n)\n',
+				f'(Dimensions\n{dimensions}\n)\n', #TODO: Add Dimensions
+				f'{model}\n',
+				f'(Mounting {self.mounting})\n',
+				f'(Datasheet "{self.datasheet}")\n',
+				f'(CategoryName "{self.category_name}")\n',
+				f'(CategoryIndex {self.category_index})\n',
+				f'(CategoryTypes {len(self.categories)}\n{categories}\n)\n',
+				f'(PossibleNames {len(self.names)}\n)\n',
+				f'(Verification {verifications})\n',
+				f')',
+			])
 
 if __name__ == "__main__":
 	import os

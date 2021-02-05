@@ -4,12 +4,11 @@
 from io import TextIOWrapper
 from reHelper import searchSingleBool, searchSingleInt
 
-class DipTraceLayer:
+class DipTraceComponentLayer:
 
 	def __init__(self) -> None:
-		self.pads   = []
+		self.pins   = []
 		self.shapes = []
-		self.holes  = []
 		self.setEnabled()
 		self.setNumber()
 		super().__init__()
@@ -22,16 +21,12 @@ class DipTraceLayer:
 		self.number = number
 		return self
 
-	def addPad(self, pad:int):
-		self.pads.append(pad)
+	def addPin(self, pin:int):
+		self.pins.append(pin)
 		return self
 
 	def addShape(self, shape:int):
 		self.shapes.append(shape)
-		return self
-
-	def addHole(self, hole:int):
-		self.holes.append(hole)
 		return self
 
 	def load(self, datafile:TextIOWrapper):
@@ -46,12 +41,12 @@ class DipTraceLayer:
 			elif tmp := searchSingleInt(r'Number', line):
 				self.number = int(tmp.group(1))
 
-			elif line == '(Pads':
+			elif line == '(Pins':
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
 					elif tmp := searchSingleInt(r'pt', line):
-						self.addPad(int(tmp.group(1)))
+						self.addPin(int(tmp.group(1)))
 
 			elif line == '(Shapes':
 				while line := datafile.readline().strip():
@@ -60,29 +55,20 @@ class DipTraceLayer:
 					elif tmp := searchSingleInt(r'pt', line):
 						self.addShape(int(tmp.group(1)))
 
-			elif line == '(Holes':
-				while line := datafile.readline().strip():
-					if line == ')':
-						break
-					elif tmp := searchSingleInt(r'pt', line):
-						self.addHole(int(tmp.group(1)))
-
 		return self
 
 
 	def __str__(self) -> str:
 
-		pads   = '\n'.join(f'(pt {pad})'   for pad   in self.pads)
+		pins   = '\n'.join(f'(pt {pin})'   for pin   in self.pins)
 		shapes = '\n'.join(f'(pt {shape})' for shape in self.shapes)
-		holes  = '\n'.join(f'(pt {hole})'  for hole  in self.holes)
 
 		return ''.join([
 			f'(Layer\n',
 			f'(Enabled "{self.enabled}")\n',
 			f'(Number {self.number})\n',
-			f'(Pads\n{pads}\n)\n' if self.number != 2 else '',       #TODO: Check this hack
+			f'(Pins\n{pins}\n)\n' if self.number != 2 else '',       #TODO: Check this hack
 			f'(Shapes\n{shapes}\n)\n' if self.number != 2 else '',   #TODO: Check this hack
-			f'(Holes\n{holes}\n)\n',
 			f')\n',
 		])
 

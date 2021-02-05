@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
+from DipTraceCategoryType import DipTraceCategoryType
+from DipTracePatternShape import DipTracePatternShape
 import textwrap
 from reHelper import searchSingleString
 from DipTraceUnits import mm2units
@@ -8,7 +10,7 @@ from DipTraceEnums import DipTracePinType, DipTracePinElectric, DipTracePinOrien
 from DipTracePatternLibrary import DipTracePattern
 from DipTraceIndentation import DipTraceIndentation
 from DipTraceComponent import DipTraceComponent
-
+from DipTracePad import DipTracePad
 
 class DipTraceComponentLibrary:
 
@@ -34,7 +36,10 @@ class DipTraceComponentLibrary:
 		return self
 
 	def __str__(self) -> str:
-		DipTracePattern.isComponent = True # Fix for DipTracePattern
+		DipTracePad.isComponent          = True # Fix for DipTracePad
+		DipTracePattern.isComponent      = True # Fix for DipTracePattern
+		DipTracePatternShape.isComponent = True # Fix for DipTracePatternShape
+		DipTraceCategoryType.isComponent = True # Fix for DipTraceCategoryType
 
 		components = '\n'.join([str(component) for component in self.components])
 

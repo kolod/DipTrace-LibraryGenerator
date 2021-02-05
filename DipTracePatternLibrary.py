@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
+from DipTracePad import DipTracePad
 import re
 from typing import Optional
 from reHelper import searchSingleString, reJoin, reInt
@@ -56,6 +57,7 @@ class DipTracePatternLibrary:
 
 	def __str__(self) -> str:
 		DipTracePattern.isComponent = False # Fix for DipTracePattern
+		DipTracePad.isComponent     = False # Fix for DipTracePattern
 
 		patterns = '\n'.join([str(pattern) for pattern in self.patterns])
 

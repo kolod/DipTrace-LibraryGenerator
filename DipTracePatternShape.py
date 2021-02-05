@@ -11,6 +11,8 @@ from DipTracePoint import DipTracePoint
 
 class DipTracePatternShape:
 
+	isComponent:bool = False
+
 	def __init__(self, match:re.Match[AnyStr]=None):
 		self.points = []
 		self.points_new = []
@@ -206,25 +208,42 @@ class DipTracePatternShape:
 		layer = self.layer.value
 		if layer > 10: layer = 1
 
-		points     = '(Points\n'     + '\n'.join([str(point) for point in self.points])     + '\n)\n'  if len(self.points)    else ''
-		points_new = '(Points_New\n' + '\n'.join([str(point) for point in self.points_new]) + '\n)\n'  if len(self.points_new) else ''
+		points     = '\n'.join([str(point) for point in self.points])
+		points_new = '\n'.join([str(point) for point in self.points_new])
 		width      = 0.75 if self.width < 0 else self.width
 
-		return ''.join([
-			f'(Shape {self.shape.value} "{self.locked}" {layer} {s[0]:.6g} {s[1]:.6g} {s[2]:.6g} {s[3]:.6g} {s[4]:.6g} {s[5]:.6g} ',
-			f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {self.line_width:.6g} 0 {width:.6g} 0)\n',
-			f'{points}',
-			f'(Width {self.width:.6g})\n',
-			f'(Layer {self.layer.value})\n',
-			f'(TextHorz {self.text_horiz:.6g})\n',
-			f'(TextVert {self.text_vert:.6g})\n',
-			f'(TextAlign {self.text_align.value})\n',
-			f'(LineSpacing {self.text_spacing:.6g})\n',
-			f'(TextAngle {self.text_angle:.6g})\n',
-			f'{points_new}',
-			f'(AllLayers "{self.all_layers}")\n',
-			f'(Group {self.group})\n'
-		])
+		if self.isComponent:
+			return ''.join([
+				f'(Shape {self.shape.value} "{self.locked}" {layer} {s[0]:.6g} {s[1]:.6g} {s[2]:.6g} {s[3]:.6g} {s[4]:.6g} {s[5]:.6g} ',
+				f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {self.line_width:.6g} 0 {width:.6g} 0)\n',
+				f'(Point\n{points}\n)\n'  if len(self.points) else '',
+				f'(Width {self.width:.6g})\n',
+				f'(Layer {self.layer.value})\n',
+				f'(TextHorz {self.text_horiz:.6g})\n',
+				f'(TextVert {self.text_vert:.6g})\n',
+				f'(TextAlign {self.text_align.value})\n',
+				f'(LineSpacing {self.text_spacing:.6g})\n',
+				f'(TextAngle {self.text_angle:.6g})\n',
+				f'(Points_New\n{points_new}\n)\n' if len(self.points_new) else '',
+				f'(AllLayers "{self.all_layers}")\n',
+				f'(Group {self.group})\n'
+			])
+		else:
+			return ''.join([
+				f'(Shape {self.shape.value} "{self.locked}" {layer} {s[0]:.6g} {s[1]:.6g} {s[2]:.6g} {s[3]:.6g} {s[4]:.6g} {s[5]:.6g} ',
+				f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {self.line_width:.6g} 0 {width:.6g} 0)\n',
+				f'(Points\n{points}\n)\n'  if len(self.points) else '',
+				f'(Width {self.width:.6g})\n',
+				f'(Layer {self.layer.value})\n',
+				f'(TextHorz {self.text_horiz:.6g})\n',
+				f'(TextVert {self.text_vert:.6g})\n',
+				f'(TextAlign {self.text_align.value})\n',
+				f'(LineSpacing {self.text_spacing:.6g})\n',
+				f'(TextAngle {self.text_angle:.6g})\n',
+				f'(Points_New\n{points_new}\n)\n'   if len(self.points_new) else '',
+				f'(AllLayers "{self.all_layers}")\n',
+				f'(Group {self.group})\n'
+			])
 
 
 if __name__ == "__main__":

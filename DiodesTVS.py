@@ -1,15 +1,18 @@
 #!/usr/'bi'n/python3
 #-*- coding: utf-8 -*-
 
+from DipTracePad import DipTracePad
 import math
-from typing import List
+from DipTraceUnits import inch2mm
+from typing import List, Pattern
 from DipTracePin import DipTracePin
-from DipTraceEnums import DipTracePinOrientation, DipTraceComponentShapeType
+from DipTraceEnums import DipTracePadTypes, DipTracePinOrientation, DipTraceComponentShapeType
 from DipTraceComponent import DipTraceComponent
 from DipTraceComponentPart import DipTraceComponentPart
 from DipTracePatternLibrary import DipTracePatternLibrary
 from DipTraceComponentShape import DipTraceComponentShape
 from DipTraceComponentLibrary import DipTraceComponentLibrary
+from DipTraceComponentLayer import DipTraceComponentLayer
 
 class SMAJ:
 	_data = [
@@ -73,7 +76,7 @@ class SMAJ:
 		self.pattern_lib = DipTracePatternLibrary().load('patterns.asc')
 		super().__init__()
 
-	def _pin(self):
+	def _pin(self) -> List[DipTracePin]:
 		return [
 			DipTracePin()
 				.setNumber(1)
@@ -87,7 +90,7 @@ class SMAJ:
 				.setLength(2.54)
 		]
 
-	def _pin_shape_uni(self) -> list:
+	def _pin_shape_uni(self) -> List[DipTraceComponentShape]:
 		x = 1.27 * math.sin(math.radians(60.0))
 
 		return [
@@ -109,7 +112,7 @@ class SMAJ:
 				.setLocked(True)
 		]
 
-	def _pin_shape_bi(self) -> list:
+	def _pin_shape_bi(self) -> List[DipTraceComponentShape]:
 		x = 2.54 * math.sin(math.radians(60.0))
 
 		return [
@@ -134,37 +137,82 @@ class SMAJ:
 				.setLocked(True)
 		]
 
-	def _pattern_uni(self):
-		return self.pattern_lib.pattern('DIOM520X255X230L115X155N')
+	def _layers(self) -> list:
+		return [
+			DipTraceComponentLayer().setEnabled(True).setNumber(0),
+			DipTraceComponentLayer().setEnabled(True).setNumber(1).addShape(1),
+		]
 
-	def _pattern_bi(self):
-		return self.pattern_lib.pattern('DIONM520X255X230L115X155N')
-
-	def _component_tvs_uni(self, name: str, voltage:float):
-		return DipTraceComponent(name, 'D', voltage) \
-			.setPattern(self._pattern_uni()) \
-			.addPart(DipTraceComponentPart(name)
-				.setValue(f'{voltage:.5g} V')
-				.addShape(self._pin_shape_uni())
-				.addPin(self._pin()))
-
-	def _component_tvs_bi(self, name: str, voltage:float):
-		return DipTraceComponent(name, 'D', voltage) \
-			.setPattern(self._pattern_bi()) \
-			.addPart(DipTraceComponentPart(name)
-				.setValue(f'{voltage:.5g} V')
-				.addShape(self._pin_shape_bi())
-				.addPin(self._pin()))
-
-	def _smaj(self) -> List[DipTraceComponent]:
+	def _component_tvs_uni(self):
 		result = []
-		result.extend([self._component_tvs_uni(component['uni'], component['voltage']) for component in self._data])
-		result.extend([self._component_tvs_uni(component['uni'], component['voltage']) for component in self._data])
+		pins   = self._pin()
+		shapes = self._pin_shape_uni()
+		layers = self._layers()
+
+		if pattern := self.pattern_lib.pattern('DIOM520X255X230L115X155N'):
+			pattern.addPad(
+				DipTracePad()
+					.setShape(DipTracePadTypes.ThroughHole)
+					.setGroup(0)
+			)
+			pattern.prependPad(
+				DipTracePad()
+					.setShape(DipTracePadTypes.ThroughHole)
+					.setGroup(0)
+			)
+
+			for component in self._data:
+				result.append(
+					DipTraceComponent(component['uni'], 'D', component['voltage'])
+						.setPattern(pattern)
+						.addPart(
+							DipTraceComponentPart(component['uni'])
+								.setSize(inch2mm(0.2), inch2mm(0.1))
+								.setValue(f'{component["voltage"]:.5g} V')
+								.addPin(pins)
+								.addLayer(layers)
+								.addShape(shapes)
+						)
+			)
+		return result
+
+	def _component_tvs_bi(self):
+		result = []
+		pins   = self._pin()
+		shapes = self._pin_shape_bi()
+		layers = self._layers()
+
+		if pattern := self.pattern_lib.pattern('DIONM520X255X230L115X155N'):
+			pattern.addPad(
+				DipTracePad()
+					.setShape(DipTracePadTypes.ThroughHole)
+					.setGroup(0)
+			)
+			pattern.prependPad(
+				DipTracePad()
+					.setShape(DipTracePadTypes.ThroughHole)
+					.setGroup(0)
+			)
+
+			for component in self._data:
+				result.append(
+					DipTraceComponent(component['bi'], 'D', component['voltage'])
+						.setPattern(pattern)
+						.addPart(
+							DipTraceComponentPart(component['bi'])
+								.setValue(f'{component["voltage"]:.5g} V')
+								.setSize(inch2mm(0.2), inch2mm(0.1))
+								.addPin(pins)
+								.addShape(shapes)
+								.addLayer(layers)
+						)
+				)
 		return result
 
 	def run(self) -> None:
 		lib = DipTraceComponentLibrary().setName('Diodes TVS')
-		lib.addComponent(self._smaj())
+		lib.addComponent(self._component_tvs_uni())
+		lib.addComponent(self._component_tvs_bi())
 		lib.save('Diodes TVS.component.asc')
 
 

@@ -1,17 +1,20 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
+from DipTracePatternShape import DipTracePatternShape
 from DipTraceComponentShape import DipTraceComponentShape
-from typing import List
+from typing import List, Union
 from DipTraceUnits import mm2units
 from DipTraceEnums import DipTraceComponentPartType
 from DipTracePin import DipTracePin
+from DipTraceComponentLayer import DipTraceComponentLayer
 
 
 class DipTraceComponentPart:
 
 	def __init__(self, name:str, type:DipTraceComponentPartType=DipTraceComponentPartType.Normal):
 		self.shapes:List[DipTraceComponentShape] = []
+		self.layers:List[DipTraceComponentLayer] = []
 		self.pins:List[DipTracePin] = []
 		self.name = name
 		self.type = type
@@ -45,14 +48,21 @@ class DipTraceComponentPart:
 		self.enabled = 'Y' if state else 'N'
 		return self
 
-	def addPin(self, pin:DipTracePin):
+	def addPin(self, pin:Union[DipTracePin, List[DipTracePin]]):
 		if type(pin) is list:
 			self.pins.extend(pin)
 		else:
 			self.pins.append(pin)
 		return self
 
-	def addShape(self, shape):
+	def addLayer(self, layer:Union[DipTraceComponentLayer, List[DipTraceComponentLayer]]):
+		if type(layer) is list:
+			self.layers.extend(layer)
+		else:
+			self.layers.append(layer)
+		return self
+
+	def addShape(self, shape:Union[DipTracePatternShape, List[DipTracePatternShape]]):
 		if type(shape) is list:
 			self.shapes.extend(shape)
 		else:
@@ -75,8 +85,11 @@ class DipTraceComponentPart:
 
 	def __str__(self) -> str:
 
-		pins   = '\n'.join([str(self.pins[i]).format(i)   for i in range(len(self.pins))  ])
-		shapes = '\n'.join([str(self.shapes[i]).format(i) for i in range(len(self.shapes))])
+		pins        = '\n'.join([str(self.pins[i]).format(i)   for i in range(len(self.pins))  ])
+		shapes      = '\n'.join([str(self.shapes[i]).format(i) for i in range(len(self.shapes))])
+		groups      = '\n'
+		layers      = '\n'.join([str(layer) for layer in self.layers])
+		user_fields = '\n'
 
 		return ''.join([
 			f'(Part "{self.name}" "{self.ref}"\n',
@@ -105,6 +118,9 @@ class DipTraceComponentPart:
 			f'(Verification "N" "N" "N" "N" "N" "N" "N")\n',
 			f'(Pins\n{pins}\n)\n'     if len(self.pins)   else '',
 			f'(Shapes\n{shapes}\n)\n' if len(self.shapes) else '',
+			f'(Groups\n{groups}\n)\n',
+			f'(Layers\n{layers}\n)\n',
+			f'(UserFields\n{user_fields}\n)\n',
 			f')\n'
 		])
 

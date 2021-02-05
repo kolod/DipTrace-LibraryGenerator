@@ -7,7 +7,9 @@ from reHelper import reBracketed, reJoin, reInt, reString
 
 class DipTraceCategoryType:
 
-	def __init__(self, match:re.Match[AnyStr]) -> None:
+	isComponent:bool = False
+
+	def __init__(self, match:re.Match[AnyStr]=None) -> None:
 		self.unknownString1 = ''
 		self.unknownString2 = ''
 		self.unknownInt1    = 0
@@ -24,7 +26,10 @@ class DipTraceCategoryType:
 		return reBracketed(reJoin(r'CategoryTypeType', reString, reString, reInt, reInt))
 
 	def __str__(self) -> str:
-		return f'(CategoryTypeType "{self.unknownString1}" "{self.unknownString2}" {self.unknownInt1} {self.unknownInt2})'
+		if self.isComponent:
+			return f'(CategoryType "{self.unknownString1}" "{self.unknownString2}" {self.unknownInt1} {self.unknownInt2})'
+		else:
+			return f'(CategoryTypeType "{self.unknownString1}" "{self.unknownString2}" {self.unknownInt1} {self.unknownInt2})'
 
 if __name__ == "__main__":
 	import os
