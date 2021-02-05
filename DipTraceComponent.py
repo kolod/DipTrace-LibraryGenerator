@@ -25,9 +25,6 @@ class DipTraceComponent:
 	def __str__(self) -> str:
 		parts       = '\n'.join([str(part) for part in self.parts])
 		pattern     = str(self.pattern) if hasattr(self, 'pattern') else ''
-		groups      = ''
-		layers      = ''
-		user_fields = ''
 
 		return '\n'.join([
 			f'(Component\n',
