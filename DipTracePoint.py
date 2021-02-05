@@ -16,7 +16,7 @@ class DipTracePoint:
 		return self
 
 	def __str__(self) -> str:
-		return f'(pt {self.x:.6g} {self.y:.6g})'
+		return f'(pt {self.x:.5g} {self.y:.5g})'
 
 if __name__ == "__main__":
 	pass
