@@ -1,26 +1,9 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
-
-from enum import Enum
-from DipTraceUnits import *
-from DipTraceEnums import *
-
-
-class DipTracePoint:
-
-	def __init__(self, x, y):
-		self.x = mm2units( x )
-		self.y = mm2units( y )
-
-	def move(self, x=0.0, y=0.0):
-		self.x += mm2units( x )
-		self.y += mm2units( y )
-		return self
-
-	def __str__(self):
-		return '                (pt {0.x:.5g} {0.y:.5g})\n'.format(self)
-
+from DipTraceUnits import mm2units
+from DipTraceEnums import DipTraceComponentShapeType, DipTraceTextAlign
+from DipTracePoint import DipTracePoint
 
 class DipTraceComponentShape:
 
@@ -88,41 +71,35 @@ class DipTraceComponentShape:
 		return self
 
 	def __str__(self):
-		result  = '            (Shape {0}\n'
-		result += '              (Enabled "{0.enabled}")\n'.format(self)
-		result += '              (Locked "{0.locked}")\n'.format(self)
-		result += '              (VectorFont "{0.vector}")\n'.format(self)
-		result += '              (FontWidth 0)\n'
-		result += '              (FontScale 0)\n'
-		result += '              (Orientation 0)\n'
-		result += '              (Type {0.shape.value})\n'.format(self)
-		result += '              (FontSize {0.font_size})\n'.format(self)
-		result += '              (FontColor 0)\n'
-		result += '              (FontType 0)\n'
-		result += '              (FontName "{0.font}")\n'.format(self)
-		result += '              (Name "{0.text}")\n'.format(self)
-		result += '              (Width {0.line_width:0.5g})\n'.format(self)
-		result += '              (TextAngle {0.text_angle})\n'.format(self)
-		result += '              (TextHorz {0.text_horiz})\n'.format(self)
-		result += '              (TextVert {0.text_vert})\n'.format(self)
-		result += '              (TextAlign {0.text_align.value})\n'.format(self)
-		result += '              (LineSpacing {0.text_spacing})\n'.format(self)
-		result += '              (Group -1)\n'
 
-		if len(self.points):
-			result += '              (Points\n'
-			for point in self.points: result += str(point)
-			result += '              )\n'
+		points     = '\n'.join([str(point) for point in self.points])
+		points_new = '\n'.join([str(point) for point in self.points])
 
-		if len(self.points):
-			result += '              (Points_New\n'
-			for point in self.points: result += str(point)
-			result += '              )\n'
-
-		result += '            )\n'
-
-		return result
-
+		return ''.join([
+			f'(Shape {"{0}"}\n',
+			f'(Enabled "{self.enabled}")\n',
+			f'(Locked "{self.locked}")\n',
+			f'(VectorFont "{self.vector}")\n',
+			f'(FontWidth 0)\n',
+			f'(FontScale 0)\n',
+			f'(Orientation 0)\n',
+			f'(Type {self.shape.value})\n',
+			f'(FontSize {self.font_size})\n',
+			f'(FontColor 0)\n',
+			f'(FontType 0)\n',
+			f'(FontName "{self.font}")\n',
+			f'(Name "{self.text}")\n',
+			f'(Width {self.line_width:0.6g})\n',
+			f'(Points\n{points}\n)\n',
+			f'(TextAngle {self.text_angle:0.6g})\n',
+			f'(TextHorz {self.text_horiz:0.6g})\n',
+			f'(TextVert {self.text_vert:0.6g})\n',
+			f'(TextAlign {self.text_align.value})\n',
+			f'(LineSpacing {self.text_spacing})\n',
+			f'(Group -1)\n',
+			f'(Points_New\n{points_new}\n)\n',
+			f')\n'
+		])
 
 if __name__ == "__main__":
 	pass
