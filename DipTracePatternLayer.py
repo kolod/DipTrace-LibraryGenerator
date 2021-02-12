@@ -2,47 +2,21 @@
 #-*- coding: utf-8 -*-
 
 from io import TextIOWrapper
-from typing import List, Union
+from typing import List
+from pyfields import field
 from reHelper import searchSingleBool, searchSingleInt
+from DipTraceBool import DipTraceBool
 
 class DipTracePatternLayer:
 
+	number   :int          = field(default=0, doc='Layer number')
+	enabled  :DipTraceBool = field(default=DipTraceBool(True), doc='Enabling shape')
+	shapes   :List[int]    = field(default=[], doc='Shapes')
+	holes    :List[int]    = field(default=[], doc='Holes')
+	pads     :List[int]    = field(default=[], doc='Pads')
+
 	def __init__(self) -> None:
-		self.pads   = []
-		self.shapes = []
-		self.holes  = []
-		self.setEnabled()
-		self.setNumber()
 		super().__init__()
-
-	def setEnabled(self, state:bool=True):
-		self.enabled = 'Y' if state else 'N'
-		return self
-
-	def setNumber(self, number:int=0):
-		self.number = number
-		return self
-
-	def addPad(self, pad:Union[int, List[int]]):
-		if type(pad) == list:
-			self.pads.extend(pad)
-		else:
-			self.pads.append(pad)
-		return self
-
-	def addShape(self, shape:Union[int, List[int]]):
-		if type(shape) == list:
-			self.shapes.extend(shape)
-		else:
-			self.shapes.append(shape)
-		return self
-
-	def addHole(self, hole:Union[int, List[int]]):
-		if type(hole) == list:
-			self.holes.extend(hole)
-		else:
-			self.holes.append(hole)
-		return self
 
 	def load(self, datafile:TextIOWrapper):
 		while line := datafile.readline().strip():
@@ -61,21 +35,21 @@ class DipTracePatternLayer:
 					if line == ')':
 						break
 					elif tmp := searchSingleInt(r'pt', line):
-						self.addPad(int(tmp.group(1)))
+						self.pads.append(int(tmp.group(1)))
 
 			elif line == '(Shapes':
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
 					elif tmp := searchSingleInt(r'pt', line):
-						self.addShape(int(tmp.group(1)))
+						self.shapes.append(int(tmp.group(1)))
 
 			elif line == '(Holes':
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
 					elif tmp := searchSingleInt(r'pt', line):
-						self.addHole(int(tmp.group(1)))
+						self.holes.append(int(tmp.group(1)))
 
 		return self
 

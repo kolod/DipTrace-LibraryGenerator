@@ -2,37 +2,50 @@
 #-*- coding: utf-8 -*-
 
 import re
+from pyfields import field
 from io import TextIOWrapper
-from typing import Literal, AnyStr
+from typing import Dict, List, Literal, AnyStr, Union, Optional
 from reHelper import reJoin, reInt, reFloat, reBool, reString, searchSingleBool, searchSingleFloat, searchSingleInt, searchDoubleFloat
-from DipTraceEnums import DipTracePatternShapeType, DipTraceLayerType, DipTraceTextAlign
-from DipTraceUnits import mm2units, units2mm
+from DipTraceBool import DipTraceBool
+from DipTraceEnums import DipTracePatternShapeType, DipTraceLayerType, DipTraceTextAlign, DipTraceMarkingType, DipTraceTextRotation
+from DipTraceUnits import mm2units, units2mm, mm2units_p
 from DipTracePoint import DipTracePoint
 
 class DipTracePatternShape:
 
 	isComponent:bool = False
 
+	shape           :DipTracePatternShapeType   = field(native=True, default=DipTracePatternShapeType.Null, doc='Shape type')
+	enabled         :DipTraceBool               = field(default=DipTraceBool(True), doc='Enabling shape')
+	locked          :DipTraceBool               = field(default=DipTraceBool(False), doc='Locking shape')
+	vector          :DipTraceBool               = field(default=DipTraceBool(True), doc='Use vector font')
+	all_layers      :DipTraceBool               = field(default=DipTraceBool(False), doc='Show the shape on the all layers.')
+	layer           :DipTraceLayerType          = field(default=DipTraceLayerType.TopSilk, doc='Layer')
+	width           :float                      = field(default=-1.0, doc='Shape width')
+	group           :int                        = field(default=0, doc='Group number')
+	line_width      :float                      = field(default=0.25, doc='Line width (Set -1 for the layer default width).')
+	text            :str                        = field(default='', doc='Text')
+	font            :str                        = field(default='Tahoma', doc='Text font')
+	font_size       :int                        = field(default=8, doc='Font size')
+	text_align      :DipTraceTextAlign          = field(default=DipTraceTextAlign.Left, doc='Text horizontal align.')
+	text_rotation   :DipTraceTextRotation       = field(default=DipTraceTextRotation.Default, doc='Text angle')
+	text_spacing    :float                      = field(default=1.2, doc='Text spacing')
+	text_horiz      :float                      = field(default=0.0)
+	text_vert       :float                      = field(default=0.0)
+	text_width      :float                      = field(default=0.0)
+	text_marking    :DipTraceMarkingType        = field(default=DipTraceMarkingType.Text, doc='Text marking type')
+	font_line_width :float                      = field(default=0.0, doc='Vector line width:\n\t-1 = Bold\n\t-2 = Normal\n\t-3 = Thin\n\tPositive value = actual width in mm * 3')
+	points          :List[DipTracePoint]        = field(default=[], doc='Points for DipTrace format lower then version 4.0.')
+	points_new      :List[DipTracePoint]        = field(default=[], doc='Points for DipTrace format version 4.0 or above.')
+
+
+	@enabled.converter(accepts=bool)
+	@locked.converter(accepts=bool)
+	@vector.converter(accepts=bool)
+	def toDipTraceBool(self, field, value):
+		return DipTraceBool(value)
+
 	def __init__(self, match:re.Match[AnyStr]=None):
-		self.points = []
-		self.points_new = []
-		self.setType()
-		self.setWidth()
-		self.setLineWidth()
-		self.setLocked()
-		self.setLayer()
-		self.setText()
-		self.setGroup()
-		self.setFont()
-		self.setVector()
-		self.setFontSize()
-		self.setTextAngle()
-		self.setTextAlign()
-		self.setSpacing()
-		self.setTextHorizontal()
-		self.setTextVertical()
-		self.setTextWidth()
-		self.setAllLayers()
 		if match:
 			self.shape       = DipTracePatternShapeType(int(match.group(1)))
 			self.locked      = match.group(2)
@@ -44,85 +57,13 @@ class DipTracePatternShape:
 			self.line_width  = float(match.group(15))
 		super().__init__()
 
-	def setType(self, shape:DipTracePatternShapeType=DipTracePatternShapeType.Null):
-		self.shape = shape
-		return self
+	def recalculate(self, origin_x:float, origin_y:float, width:float, height:float):
 
-	def setLocked(self, state:bool=False):
-		self.locked = 'Y' if state else 'N'
-		return self
-
-	def setEnabled(self, state:bool=True):
-		self.enabled = 'Y' if state else 'N'
-		return self
-
-	def setAllLayers(self, state:bool=False):
-		self.all_layers = 'Y' if state else 'N'
-		return self
-
-	def setWidth(self, width:float=-1.0):
-		self.width = mm2units(width)
-		return self
-
-	def setGroup(self, group:int=-1):
-		self.group = group
-		return self
-
-	def setLineWidth(self, width:float=0.25):
-		self.line_width = mm2units( width )
-		return self
-
-	def setLayer(self, layer:DipTraceLayerType=DipTraceLayerType.TopSilk):
-		self.layer = layer
-		return self
-
-	def addPoint(self, x:float, y:float):
-		self.points.append(DipTracePoint(x, y))
-		return self
-
-	def addPointNew(self, x:float, y:float):
-		self.points_new.append(DipTracePoint(x, y))
-		return self
-
-	def setText(self, text:str=''):
-		self.text         = text
-		return self
-
-	def setFont(self, font:str='Tahoma'):
-		self.font         = font
-		return self
-
-	def setVector(self, vector:bool=True):
-		self.vector       = 'Y' if vector else 'N'
-		return self
-
-	def setFontSize(self, size:int=8):
-		self.font_size    = size
-		return self
-
-	def setTextAngle(self, align:DipTraceTextAlign=DipTraceTextAlign.Left):
-		self.text_align   = align
-		return self
-
-	def setTextAlign(self, angle:float=0.0):
-		self.text_angle   = angle
-		return self
-
-	def setSpacing(self, spacing:float=1.2):
-		self.text_spacing = spacing
-		return self
-
-	def setTextHorizontal(self, horizontal:float=0):
-		self.text_horiz   = horizontal
-		return self
-
-	def setTextVertical(self, vertical:float=0):
-		self.text_vert    = vertical
-		return self
-
-	def setTextWidth(self, width:float=1.0):
-		self.text_width = width
-		return self
+		self.points.clear()
+		for point in self.points_new:
+			x = (point.x + origin_x) / width
+			y = (point.y + origin_y) / height
+			self.points.append(DipTracePoint(x, y, False))
 
 	def move(self, x:float=0.0, y:float=0.0):
 		for point in self.points:
@@ -162,7 +103,7 @@ class DipTracePatternShape:
 				self.text_spacing = float(tmp.group(1))
 
 			elif tmp := searchSingleFloat(r'TextAngle', line):
-				self.text_angle = float(tmp.group(1))
+				self.text_rotation = float(tmp.group(1))
 
 			elif tmp := searchSingleBool(r'AllLayers', line):
 				self.all_layers = tmp.group(1)
@@ -172,9 +113,9 @@ class DipTracePatternShape:
 					if line == ')':
 						break
 					if tmp := searchDoubleFloat(r'pt', line):
-						x = units2mm(float(tmp.group(1)))
-						y = units2mm(float(tmp.group(2)))
-						self.addPoint(x, y)
+						x = float(tmp.group(1))
+						y = float(tmp.group(2))
+						self.addPoint(DipTracePoint(x, y, False))
 
 			elif line == '(Points_New':
 				while line := datafile.readline().strip():
@@ -183,7 +124,7 @@ class DipTracePatternShape:
 					if tmp := searchDoubleFloat(r'pt', line):
 						x = units2mm(float(tmp.group(1)))
 						y = units2mm(float(tmp.group(2)))
-						self.addPointNew(x, y)
+						self.addPointNew(DipTracePoint(x, y, True))
 
 			elif line.startswith('(Shape ') or line == ')':
 				datafile.seek(pos)  # Save position
@@ -197,12 +138,12 @@ class DipTracePatternShape:
 	def __str__(self):
 
 		s = [
-			self.points[0].x if len(self.points) >= 1  else 0,
-			self.points[0].y if len(self.points) >= 1  else 0,
-			self.points[1].x if len(self.points) >= 2  else 0,
-			self.points[1].y if len(self.points) >= 2  else 0,
-			self.points[2].x if len(self.points) >= 3  else 0,
-			self.points[2].y if len(self.points) >= 3  else 0,
+			round( self.points[0].x, 4) + 0 if len(self.points)     >= 1  else 0,
+			round(-self.points[0].y, 4) + 0 if len(self.points)     >= 1  else 0,
+			round( self.points[1].x, 4) + 0 if len(self.points)     >= 2  else 0,
+			round(-self.points[1].y, 4) + 0 if len(self.points)     >= 2  else 0,
+			round( self.points[2].x, 4) + 0 if len(self.points)     >= 3  else 0,
+			round(-self.points[2].y, 4) + 0 if len(self.points)     >= 3  else 0,
 		]
 
 		layer = self.layer.value
@@ -210,20 +151,21 @@ class DipTracePatternShape:
 
 		points     = '\n'.join([str(point) for point in self.points])
 		points_new = '\n'.join([str(point) for point in self.points_new])
-		width      = 0.75 if self.width < 0 else self.width
+
 
 		if self.isComponent:
 			return ''.join([
 				f'(Shape {self.shape.value} "{self.locked}" {layer} {s[0]:.6g} {s[1]:.6g} {s[2]:.6g} {s[3]:.6g} {s[4]:.6g} {s[5]:.6g} ',
-				f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {self.line_width:.6g} 0 {width:.6g} 0)\n',
+				f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {mm2units_p(self.font_line_width):.6g} ',
+				f'{self.text_rotation.value} {mm2units_p(self.line_width):.6g} {self.text_marking.value})\n',
 				f'(Point\n{points}\n)\n'  if len(self.points) else '',
-				f'(Width {self.width:.6g})\n',
+				f'(Width {mm2units_p(self.line_width):.6g})\n',
 				f'(Layer {self.layer.value})\n',
 				f'(TextHorz {self.text_horiz:.6g})\n',
 				f'(TextVert {self.text_vert:.6g})\n',
 				f'(TextAlign {self.text_align.value})\n',
 				f'(LineSpacing {self.text_spacing:.6g})\n',
-				f'(TextAngle {self.text_angle:.6g})\n',
+				f'(TextAngle {self.text_rotation.value:.6g})\n',
 				f'(Points_New\n{points_new}\n)\n' if len(self.points_new) else '',
 				f'(AllLayers "{self.all_layers}")\n',
 				f'(Group {self.group})\n'
@@ -231,15 +173,16 @@ class DipTracePatternShape:
 		else:
 			return ''.join([
 				f'(Shape {self.shape.value} "{self.locked}" {layer} {s[0]:.6g} {s[1]:.6g} {s[2]:.6g} {s[3]:.6g} {s[4]:.6g} {s[5]:.6g} ',
-				f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {self.line_width:.6g} 0 {width:.6g} 0)\n',
+				f'"{self.text}" "{self.font}" "{self.vector}" {self.font_size} {self.text_width:.6g} {mm2units_p(self.font_line_width):.6g} ',
+				f'{self.text_rotation.value} {mm2units_p(self.line_width):.6g} {self.text_marking.value})\n',
 				f'(Points\n{points}\n)\n'  if len(self.points) else '',
-				f'(Width {self.width:.6g})\n',
+				f'(Width {mm2units_p(self.line_width):.6g})\n',
 				f'(Layer {self.layer.value})\n',
 				f'(TextHorz {self.text_horiz:.6g})\n',
 				f'(TextVert {self.text_vert:.6g})\n',
 				f'(TextAlign {self.text_align.value})\n',
 				f'(LineSpacing {self.text_spacing:.6g})\n',
-				f'(TextAngle {self.text_angle:.6g})\n',
+				f'(TextAngle {self.text_rotation.value:.6g})\n',
 				f'(Points_New\n{points_new}\n)\n'   if len(self.points_new) else '',
 				f'(AllLayers "{self.all_layers}")\n',
 				f'(Group {self.group})\n'

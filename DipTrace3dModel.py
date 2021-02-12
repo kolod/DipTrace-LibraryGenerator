@@ -3,80 +3,43 @@
 
 import re
 from io import TextIOWrapper
+from typing import List
+from pyfields import field
 from reHelper import searchSingleString, reJoin, reFloat, reBool
+from DipTraceBool import DipTraceBool
 from DipTraceUnits import mm2units
 from DipTraceEnums import DipTrace3dModelType, DipTrace3dModelUnits
 
-
 class DipTrace3dModel:
 
+	type       :DipTrace3dModelType    = field(default=DipTrace3dModelType.File, doc='')
+	units      :DipTrace3dModelUnits   = field(default=DipTrace3dModelUnits.Wings3D, doc='')
+	height     :float                  = field(default=0.0, doc='Height')
+	color      :int                    = field(default=4934475, doc='Color')
+	origin_x   :float                  = field(default=0.0, doc='Origin X coordinate')
+	origin_y   :float                  = field(default=0.0, doc='Origin Y coordinate')
+	filename   :str                    = field(default='', doc='')
+	x          :float                  = field(default=0.0, doc='X coordinate')
+	y          :float                  = field(default=0.0, doc='Y coordinate')
+	z          :float                  = field(default=0.0, doc='Z coordinate')
+	rotation_x :float                  = field(default=0.0, doc='Rotation X coordinate')
+	rotation_y :float                  = field(default=0.0, doc='Rotation Y coordinate')
+	rotation_z :float                  = field(default=0.0, doc='Rotation Z coordinate')
+	scale_x    :float                  = field(default=1.0, doc='Scale X coordinate')
+	scale_y    :float                  = field(default=1.0, doc='Scale Y coordinate')
+	scale_z    :float                  = field(default=1.0, doc='Scale Z coordinate')
+	search     :DipTraceBool           = field(default=DipTraceBool(False), doc='Search model in folders')
+	flip       :DipTraceBool           = field(default=DipTraceBool(False), doc='Flip Z and Y axis')
+	keep_pins  :DipTraceBool           = field(default=DipTraceBool(False), doc='Keep all model pins')
+
+	@search.converter(accepts=bool)
+	@flip.converter(accepts=bool)
+	@keep_pins.converter(accepts=bool)
+	def toDipTraceBool(self, field, value):
+		return DipTraceBool(value)
+
 	def __init__(self):
-		self.setType()
-		self.setUnits()
-		self.setHeight()
-		self.setColor()
-		self.setFilename()
-		self.setOrigin()
-		self.setTranslation()
-		self.setRotation()
-		self.setScale()
-		self.setAutomaticSearch()
-		self.setFlipByZ()
 		super().__init__()
-
-	def setType(self, type:DipTrace3dModelType=DipTrace3dModelType.File):
-		self.type = type
-		return self
-
-	def setUnits(self, units:DipTrace3dModelUnits=DipTrace3dModelUnits.Meters):
-		self.units = units
-		return self
-
-	def setHeight(self, height:float=0.0):
-		''' Set height for outline model generation '''
-		self.height = mm2units(height)
-		return self
-
-	def setColor(self, r:int=0, g:int=0, b:int=0):
-		self.color = r << 16 | g << 8 | b
-		return self
-
-	def setOrigin(self, x:float=0.0, y:float=0.0):
-		''' Only for IPC-7351 generated type'''
-		self.origin_x = mm2units(x) #TODO: Check units
-		self.origin_y = mm2units(y) #TODO: Check units
-		return self
-
-	def setFilename(self, filename:str=''):
-		self.filename = filename
-		return self
-
-	def setTranslation(self, x=0.0, y=0.0, z=0.0):
-		self.x = x
-		self.y = y
-		self.z = z
-		return self
-
-	def setRotation(self, x=0.0, y=0.0, z=0.0):
-		self.rotation_x = x
-		self.rotation_y = y
-		self.rotation_z = z
-		return self
-
-	def setScale(self, x=1.0, y=1.0, z=1.0):
-		self.scale_x = x
-		self.scale_y = y
-		self.scale_z = z
-		return self
-
-	def setAutomaticSearch(self, state=False):
-		''' Only for file type '''
-		self.search = 'Y' if state else 'N'
-		return self
-
-	def setFlipByZ(self, state=False):
-		self.flip = 'Y' if state else 'N'
-		return self
 
 	def load(self, datafile:TextIOWrapper):
 		while line := datafile.readline().strip():
@@ -113,14 +76,14 @@ class DipTrace3dModel:
 		return ''.join([
 			f'(Model3D\n',
 			f'(Model3DFile "{self.filename}")\n',
-			f'(pt {self.rotation_x:.4g} {self.rotation_y:.4g} {self.rotation_z:.4g} ',
-			f'{self.x:.4g} {self.y:.4g} {self.z:.4g} ',
+			f'(pt {self.rotation_x:.4g} {self.rotation_y:.4g} {-self.rotation_z+0:.4g} ',
+			f'{mm2units(self.x):.4g} {mm2units(-self.y):.4g} {mm2units(-self.z):.4g} ',
 			f'{self.scale_x:.4g} {self.scale_y:.4g} {self.scale_z:.4g} ',
 			f'"{self.flip}" "{self.search}" ',
-			f'{self.units.value} {self.origin_x:.5g} {self.origin_y:.5g} {self.height} {self.color} {self.type.value})\n',
+			f'{self.units.value} {self.origin_x:.5g} {self.origin_y:.5g} {self.height:.5g} ',
+			f'{self.color} {self.type.value} "{self.keep_pins}")\n',
 			f')\n',
 		])
-
 
 if __name__ == "__main__":
 	pass

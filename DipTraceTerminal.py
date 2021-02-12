@@ -4,7 +4,9 @@
 
 import re
 from io import TextIOWrapper
-
+from typing import List
+from pyfields import field
+from DipTraceUnits import deg2rad, mm2units
 from reHelper import reJoin, searchSingleInt, searchSingleFloat, searchDoubleFloat, reInt
 from DipTraceUnits import mm2units, units2mm
 from DipTraceEnums import DipTraceTerminalShapes
@@ -13,39 +15,22 @@ from DipTracePoint import DipTracePoint
 
 class DipTraceTerminal:
 
+	shape   :DipTraceTerminalShapes     = field(default=DipTraceTerminalShapes.Null, doc='Terminal shape type')
+	x       :float                      = field(default=0.0, doc='X coortinate')
+	y       :float                      = field(default=0.0, doc='Y coortinate')
+	width   :float                      = field(default=0.0, doc='Width')
+	height  :float                      = field(default=0.0, doc='Height')
+	angle   :float                      = field(default=0.0, doc='Angle')
+	corner  :float                      = field(default=0.0, doc='Corner')
+
+	points  :List[DipTracePoint]        = field(default=[], doc='Shape points')
+
 	def __init__(self):
-		self.points = []
-		self.setposition()
-		self.setShape()
-		self.setAngle()
-		self.setSize()
-		self.setCorner()
 		super().__init__()
 
 	def setposition(self, x:float=0.0, y:float=0.0):
-		self.x = mm2units(x)
-		self.y = mm2units(y)
-		return self
-
-	def setSize(self, width:float=0.0, height:float=0.0):
-		self.width  = mm2units( width )
-		self.height = mm2units( height )
-		return self
-
-	def setShape(self, shape:DipTraceTerminalShapes=DipTraceTerminalShapes.Null):
-		self.shape = shape
-		return self
-
-	def setAngle(self, angle:float=0.0):
-		self.angle = angle
-		return self
-
-	def setCorner(self, corner:float=0.0):
-		self.corner = corner
-		return self
-
-	def addPoint(self, x:float=0.0, y:float=0.0):
-		self.points.append(DipTracePoint(x, y))
+		self.x = x
+		self.y = y
 		return self
 
 	def move(self, x:float=0.0, y:float=0.0):
@@ -65,7 +50,7 @@ class DipTraceTerminal:
 					if tmp := searchDoubleFloat(r'pt', line):
 						x = units2mm(tmp.group(1))
 						y = units2mm(tmp.group(2))
-						self.addPoint(x, y)
+						self.points.append(DipTracePoint(x, y))
 
 			elif tmp := searchSingleInt(r'Type', line):
 				self.shape = DipTraceTerminalShapes(int(tmp.group(1)))
@@ -94,11 +79,11 @@ class DipTraceTerminal:
 		return ''.join([
 			f'(PadTerminal\n'
 			f'(Type {self.shape.value})\n',
-			f'(X {self.x:.4g})\n',
-			f'(Y {self.y:.4g})\n',
-			f'(Angle {self.angle:.4g})\n',
-			f'(ShapeWidth {self.width:.4g})\n',
-			f'(ShapeHeight {self.height:.4g})\n',
+			f'(X {mm2units(self.x):.4g})\n',
+			f'(Y {mm2units(-self.y):.4g})\n',
+			f'(Angle {deg2rad(self.angle):.4g})\n',
+			f'(ShapeWidth {mm2units(self.width):.4g})\n',
+			f'(ShapeHeight {mm2units(self.height):.4g})\n',
 			f'(ShapeCorner {self.corner:.4g})\n',
 			f'(ShapePoints {len(self.points)}\n{points}\n',
 			f')\n',

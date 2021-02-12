@@ -4,6 +4,18 @@
 from enum import Enum
 
 
+class DipTraceMarkingType(Enum):
+	Text             = 0
+	Name             = 1
+	RefDes           = 2
+	Value            = 3
+
+class DipTraceTextRotation(Enum):
+	Default          = 0
+	Rotate_90        = 1
+	Rotate_180       = 2
+	Rotate_270       = 3
+
 class DipTraceDimentionType(Enum):
 	Horizontal       = 0
 	Vertical         = 1
@@ -40,7 +52,7 @@ class DipTracePatternShapeType(Enum):
 	Line             = 1
 	Rectangle        = 2
 	Obround          = 3
-	FilledRectangle  = 2
+	FilledRectangle  = 4
 	FilledObround    = 5
 	Arc              = 6
 	Text             = 7

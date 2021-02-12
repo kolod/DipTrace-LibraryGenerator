@@ -3,7 +3,9 @@
 
 import re
 from io import TextIOWrapper
-from typing import  Literal, AnyStr
+from typing import  Literal, AnyStr, List, Any
+from pyfields import field
+from DipTraceBool import DipTraceBool
 from DipTraceUnits import mm2units, units2mm
 from DipTracePoint import DipTracePoint
 from DipTraceTerminal import DipTraceTerminal
@@ -23,188 +25,64 @@ class DipTracePad:
 
 	isComponent:bool = False
 
-	def __init__(self, match:re.Match[AnyStr]=None):
-		self.terminals            = []
-		self.points               = []
-		self.points_new           = []
-		self.mask_top_segments    = []
-		self.mask_bottom_segments = []
-		self.setName()
-		self.setNote()
-		self.setNumber()
-		self.setPosition()
-		self.setGroup()
-		self.setSurface()
-		self.setSize()
-		self.setLocked()
-		self.setInverted()
-		self.setSided()
-		self.setStandart()
-		self.setPadMask()
-		self.setShape()
-		self.setShapeNew()
-		self.setHole()
-		self.setCustomShrink()
-		self.setCustomShrinkNew()
-		self.setCustomSwell()
-		self.setCustomSwellNew()
-		self.setPadAngle()
-		self.setPadShapePosition()
-		self.setPadCorner()
-		self.setTopMask()
-		self.setBottomMask()
-		self.setTopPaste()
-		self.setBottomPaste()
+	points                :List[DipTracePoint]        = field(default=[], doc='Points for DipTrace format lower then version 4.0.')
+	points_new            :List[DipTracePoint]        = field(default=[], doc='Points for DipTrace format version 4.0 or above.')
+	terminals             :List[DipTraceTerminal]     = field(default=[], doc='Terminals.')
+	mask_top_segments     :list                       = field(default=[])
+	mask_bottom_segments  :list                       = field(default=[])
+	name                  :str                        = field(default='', doc='Pad name.')
+	note                  :str                        = field(default='', doc='Pad note.')
+	number                :int                        = field(default=0, doc='Pad number')
+	group                 :int                        = field(default=0, doc='Group number')
+	x                     :float                      = field(default=0.0, doc='X coortinate')
+	y                     :float                      = field(default=0.0, doc='Y coortinate')
+	width                 :float                      = field(default=0.0, doc='Width')
+	height                :float                      = field(default=0.0, doc='Height')
+	shape                 :DipTracePadShapes          = field(default=DipTracePadShapes.Oval, doc='Pad shape for DipTrace format lower then version 4.0.')
+	shape_new             :DipTracePadShapesNew       = field(default=DipTracePadShapes.Oval, doc='Pad shape for DipTrace format version 4.0 or above.')
+	hole_type             :DipTraceHoleTypes          = field(default=DipTraceHoleTypes.Round, doc='Hole type')
+	hole_width            :float                      = field(default=0.0, doc='Hole width')
+	hole_height           :float                      = field(default=0.0, doc='Hole height')
+	standart              :DipTraceBool               = field(default=DipTraceBool(True), doc="Use pattern's standart pad properties.")
+	surface               :DipTraceBool               = field(default=DipTraceBool(True), doc="Surface mount pattern.")
+	locked                :DipTraceBool               = field(default=DipTraceBool(False), doc='Locking shape')
+	inverted              :DipTraceBool               = field(default=DipTraceBool(False), doc='Inverted')
+	sided                 :DipTraceBool               = field(default=DipTraceBool(False), doc='Sided')
+	mask_percent          :float                      = field(default=0.0, doc='')
+	mask_edge_gap         :float                      = field(default=0.0, doc='')
+	mask_segment_gap      :float                      = field(default=0.0, doc='')
+	mask_segment_side     :int                        = field(default=0, doc='')
+	mask_top_segments     :List[List[float]]          = field(default=[], doc='')
+	mask_bottom_segments  :List[List[float]]          = field(default=[], doc='')
+	custom_swell          :float                      = field(default=0.0, doc='')
+	custom_swell_new      :float                      = field(default=0.0, doc='')
+	custom_shrink         :float                      = field(default=0.0, doc='')
+	custom_shrink_new     :float                      = field(default=0.0, doc='')
+	pad_angle             :float                      = field(default=0.0, doc='Pad angle')
+	pad_shape_x           :float                      = field(default=0.0, doc='Pad shape X')
+	pad_shape_y           :float                      = field(default=0.0, doc='Pad shape Y')
+	pad_corner            :float                      = field(default=0.0, doc='Pad corner')
 
+	def __init__(self, match:re.Match[AnyStr]=None):
 		if match:
 			self.number = int(match.group(1))
 			self.name   = match.group(2)
 			self.note   = match.group(3)
-			self.x      = float(match.group(4))
-			self.y      = float(match.group(5))
+			self._x     = float(match.group(4))
+			self._y     = float(match.group(5))
 		super().__init__()
 
-	def setName(self, name:str=''):
-		self.name = name
-		return self
-
-	def setNote(self, note:str=''):
-		self.note = note
-		return self
-
-	def setNumber(self, number:int=0):
-		self.number = number
-		return self
-
-	def setPosition(self, x:float=0.0, y:float=0.0):
-		self.x = mm2units(x)
-		self.y = mm2units(y)
-		return self
-
-	def setStandart(self, state=False):
-		self.standart = 'Y' if state else 'N'
-		return self
-
-	def setSurface(self, state=False):
-		self.surface = 'Y' if state else 'N'
-		return self
-
-	def setGroup(self, group:int=-1):
-		self.group = group
-		return self
-
-	def setSize(self, width=0.0, height=0.0):
-		self.width  = mm2units( width )
-		self.height = mm2units( height )
-		return self
-
-	def setHole(self, hole_type=DipTraceHoleTypes.Round, width=0.0, height=0.0):
-		self.hole_type   = hole_type
-		self.hole_width  = mm2units( width )
-		self.hole_height = mm2units( height )
-		return self
-
-	def setLocked(self, state=False):
-		self.locked = 'Y' if state else 'N'
-		return self
-
-	def setInverted(self, state=False):
-		self.inverted = 'Y' if state else 'N'
-		return self
-
-	def setSided(self, state=False):
-		self.sided = 'Y' if state else 'N'
-		return self
-
-	def setShape(self, shape=DipTracePadShapes.Oval):
-		self.shape = shape
-		return self
-
-	def setShapeNew(self, shape=DipTracePadShapesNew.Ellipse):
-		self.shape_new = shape
-		return self
-
-	def setPadMask(self, percent=0, edge_gap=0, segment_gap=0, segment_side=0):
-		self.mask_percent         = percent
-		self.mask_edge_gap        = edge_gap
-		self.mask_segment_gap     = segment_gap
-		self.mask_segment_side    = segment_side
-		return self
-
-	def setPadMaskTopSegments(self, segments=[]):
-		self.mask_top_segments = segments
-		return self
-
-	def setPadMaskBottomSegments(self, segments=[]):
-		self.mask_bottom_segments = segments
-		return self
-
-	def setCustomSwell(self, swell:float=0.0):
-		self.custom_swell = swell
-		return self
-
-	def setCustomSwellNew(self, swell:float=0.0):
-		self.custom_swell_new = swell
-		return self
-
-	def setCustomShrink(self, shrink:float=0.0):
-		self.custom_shrink = shrink
-		return self
-
-	def setCustomShrinkNew(self, shrink:float=0.0):
-		self.custom_shrink_new = shrink
-		return self
-
-	def setPadAngle(self, angle:float=0.0):
-		self.pad_angle = angle
-		return self
-
-	def setPadShapePosition(self, x:float=0.0, y:float=0.0):
-		self.pad_shape_x = mm2units(x) #TODO: Check units
-		self.pad_shape_y = mm2units(y) #TODO: Check units
-		return self
-
-	def setPadCorner(self, corner:float=0.0):
-		self.pad_corner = corner
-		return self
-
 	@staticmethod
-	def _mask(param1:bool=False, param2:int=0, param3:int=0, match:re.Match=None):
+	def _mask(match:re.Match[Any]):
 		result= []
-		if match == None:
-			result.append('Y' if param1 else 'N')
-			result.append(param2)
-			if param3 != None:
-				result.append(param3)
-		else:
-			if match.lastindex >= 1: result.append(match.group(1))
-			if match.lastindex >= 2: result.append(int(match.group(2)))
-			if match.lastindex >= 3: result.append(int(match.group(3)))
+		if match.lastindex >= 1: result.append(match.group(1))
+		if match.lastindex >= 2: result.append(int(match.group(2)))
+		if match.lastindex >= 3: result.append(int(match.group(3)))
 		return result
 
-	def setTopMask(self, param1:bool=False, param2:int=0, param3:int=0):
-		self.top_mask = self._mask(param1, param2, param3)
-		return self
-
-	def setBottomMask(self, param1:bool=False, param2:int=0, param3:int=0):
-		self.bottom_mask = self._mask(param1, param2, param3)
-		return self
-
-	def setTopPaste(self, param1:bool=False, param2:int=0, param3:int=0):
-		self.top_paste = self._mask(param1, param2, param3)
-		return self
-
-	def setBottomPaste(self, param1:bool=False, param2:int=0, param3:int=0):
-		self.bottom_paste = self._mask(param1, param2, param3)
-		return self
-
-	def addTerminal(self, terminal:DipTraceTerminal):
-		self.terminals.append(terminal)
-		return self
-
 	def move(self, x:float=0.0, y:float=0.0):
-		self.x += mm2units( x )
-		self.y += mm2units( y )
+		self._x += mm2units( x )
+		self._y += mm2units( y )
 		return self
 
 	@staticmethod
@@ -249,13 +127,17 @@ class DipTracePad:
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
-				# TODO: implement PadMask_TopSegments
+					if tmp := re.search(reBracketed(reJoin(r'pt', reFloat, reFloat, reFloat, reFloat)), line):
+						if tmp.lastindex >= 4:
+							self.mask_top_segments.append([tmp.group(i+1) for i in range(4)])
 
 			elif line.startswith('(PadMask_BotSegments '):
 				while line := datafile.readline().strip():
 					if line == ')':
 						break
-				# TODO: implement PadMask_BotSegments
+					if tmp := re.search(reBracketed(reJoin(r'pt', reFloat, reFloat, reFloat, reFloat)), line):
+						if tmp.lastindex >= 4:
+							self.mask_bottom_segments.append([tmp.group(i+1) for i in range(4)])
 
 			elif tmp := searchSingleBool(r'Locked', line):
 				self.locked = tmp.group(1)
@@ -339,26 +221,25 @@ class DipTracePad:
 				self.pad_corner = float(tmp.group(1))
 
 			elif tmp := re.search(reBracketed(reJoin(r'DisableTopMask', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
-				self.top_mask = self._mask(match=tmp)
+				self.top_mask = self._mask(tmp)
 
 			elif tmp := re.search(reBracketed(reJoin(r'DisableBottomMask', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
-				self.bottom_mask = self._mask(match=tmp)
+				self.bottom_mask = self._mask(tmp)
 
 			elif tmp := re.search(reBracketed(reJoin(r'DisableTopPaste', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
-				self.top_paste = self._mask(match=tmp)
+				self.top_paste = self._mask(tmp)
 
 			elif tmp := re.search(reBracketed(reJoin(r'DisableBottomPaste', r'"([YN]?)" ([-]?\d*)\s*([-]?\d*)')), line):
-				self.bottom_paste = self._mask(match=tmp)
+				self.bottom_paste = self._mask(tmp)
 
 		return self
-
 
 	def __str__(self):
 		points         = '\n'.join([str(point) for point in self.points     ])
 		points_new     = '\n'.join([str(point) for point in self.points_new ])
 		terminals      = '\n'.join([str(point) for point in self.terminals  ])
-		top_segmens    = '\n'
-		bottom_segmens = '\n'
+		top_segmens    = '\n'.join([f'(pt {s[0]:.5g} {s[1]:.5g} {s[2]:.5g} {s[3]:.5g}' for s in self.mask_top_segments   ])
+		bottom_segmens = '\n'.join([f'(pt {s[0]:.5g} {s[1]:.5g} {s[2]:.5g} {s[3]:.5g}' for s in self.mask_bottom_segments])
 
 		def ff(value) -> str:
 			if type(value) == str: return f'"{value}"'
@@ -372,7 +253,7 @@ class DipTracePad:
 
 		if self.isComponent:
  			return ''.join([
-				f'(Pad {"{0}"} "{self.name}" "{self.note}" {self.x:.5g} {self.y:.5g}\n',
+				f'(Pad {"{0}"} "{self.name}" "{self.note}" {self._x:.5g} {self._y:.5g}\n',
 				f'(Number {self.number})\n',
 				f'(Number_New {self.number})\n',
 				f'(Inverted "{self.inverted}")\n',
@@ -409,13 +290,13 @@ class DipTracePad:
 				f'(PadMask_EdgeGap {self.mask_edge_gap:0.1g})\n',
 				f'(PadMask_SegmentGap {self.mask_segment_gap:0.1g})\n',
 				f'(PadMask_SegmentSide {self.mask_segment_side:0.1g})\n',
-				f'(PadMask_TopSegments {len(self.mask_top_segments)}{top_segmens}\n)\n',
-				f'(PadMask_BotSegments {len(self.mask_bottom_segments)}{bottom_segmens}\n)\n',
+				f'(PadMask_TopSegments {len(self.mask_top_segments)}\n{top_segmens}\n)\n',
+				f'(PadMask_BotSegments {len(self.mask_bottom_segments)}\n{bottom_segmens}\n)\n',
 				f')\n',
 			])
 		else:
 			return ''.join([
-				f'(Pad {"{0}"} "{self.name}" "{self.note}" {self.x:.5g} {self.y:.5g}\n',
+				f'(Pad {"{0}"} "{self.name}" "{self.note}" {self._x:.5g} {self._y:.5g}\n',
 				f'(Number {self.number})\n',
 				f'(Number_New {self.number})\n',
 				f'(Inverted "{self.inverted}")\n',
@@ -446,7 +327,7 @@ class DipTracePad:
 				f'(Group {self.group})\n',
 				f'(Standard "{self.standart}")\n',
 				f'(Points\n{points}\n)\n',
-				f'(PadPoints_New\n{points_new}\n)\n',
+				f'(PadPoints_New\n{points_new}\n)\n' if len(self.points_new) else '',
 				f'(PadTerminalCount {len(self.terminals)}\n{terminals}\n)\n',
 				f'(PadMask_Percent {self.mask_percent:0.2g})\n',
 				f'(PadMask_EdgeGap {self.mask_edge_gap:0.1g})\n',
@@ -456,7 +337,6 @@ class DipTracePad:
 				f'(PadMask_BotSegments {len(self.mask_bottom_segments)}{bottom_segmens}\n)\n',
 				f')\n',
 			])
-
 
 if __name__ == "__main__":
 	pass

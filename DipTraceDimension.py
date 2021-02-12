@@ -1,115 +1,45 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
+from DipTraceConnection import DipTraceConnection
 from io import TextIOWrapper
+from pyfields import field
+from typing import List
 from DipTraceUnits import mm2units
 from reHelper import searchSingleBool, searchSingleString, searchSingleInt, searchSingleFloat, searchSingleIntlList, searchSingleFloatList
+from DipTraceBool import DipTraceBool
 from DipTraceEnums import DipTraceDimentionType, DipTraceDimentionUnits, DipTraceLayerType, DipTraceDimensionPointerType
-
+from DipTraceConnection import DipTraceConnection
 
 class DipTraceDimension:
 
+	enabled         :DipTraceBool                 = field(default=DipTraceBool(True), doc='Enabling dimension')
+	locked          :DipTraceBool                 = field(default=DipTraceBool(False), doc='Locking dimension')
+	type            :DipTraceDimentionType        = field(default=DipTraceDimentionType.Free, doc='')
+	layer           :DipTraceLayerType            = field(default=DipTraceLayerType.TopDimension, doc='')
+	units           :DipTraceDimentionUnits       = field(default=DipTraceDimentionUnits.Default, doc='')
+	show_units      :DipTraceBool                 = field(default=DipTraceBool(False), doc='Show units')
+	arrow_size      :float                        = field(default=1.0, doc='')
+	text            :str                          = field(default='', doc='Text')
+	vector          :DipTraceBool                 = field(default=DipTraceBool(True), doc='Use vector font')
+	font            :str                          = field(default='Tahoma', doc='Text font')
+	font_size       :int                          = field(default=8, doc='Font size')
+	font_width      :float                        = field(default=1.0)
+	font_scale      :float                        = field(default=1.0)
+	angle           :float                        = field(default=0.0)
+	group           :int                          = field(default=0, doc='Group number')
+	radius          :float                        = field(default=0.0)
+	pointer_mode    :DipTraceDimensionPointerType = field(default=DipTraceDimensionPointerType.Coordinates)
+	point_1_x       :float                        = field(default=0.0, doc='Point 1 X coortinate')
+	point_1_y       :float                        = field(default=0.0, doc='Point 1 Y coortinate')
+	point_2_x       :float                        = field(default=0.0, doc='Point 2 X coortinate')
+	point_2_y       :float                        = field(default=0.0, doc='Point 2 Y coortinate')
+	point_d_x       :float                        = field(default=0.0, doc='Point D X coortinate')
+	point_d_y       :float                        = field(default=0.0, doc='Point D Y coortinate')
+	connections     :List[DipTraceConnection]     = field(default=[])
+
 	def __init__(self) -> None:
-		self.points      = []
-		self.connections = []
-		self.setEnabled()
-		self.setlocked()
-		self.setType()
-		self.setLayer()
-		self.setArrowSize()
-		self.setUnits()
-		self.setShowUnits()
-		self.setVectorFont()
-		self.setFont()
-		self.setText()
-		self.setAngle()
-		self.setGroup()
-		self.setPointD()
-		self.setExternalRadius()
-		self.setPointerMode()
 		super().__init__()
-
-	def setEnabled(self, state:bool=True):
-		self.enabled = 'Y' if state else 'N'
-		return self
-
-	def setlocked(self, state:bool=False):
-		self.locked = 'Y' if state else 'N'
-		return self
-
-	def setType(self, type:DipTraceDimentionType=DipTraceDimentionType.Free):
-		self.type = type
-		return self
-
-	def setLayer(self, layer:DipTraceLayerType=DipTraceLayerType.TopDimension):
-		self.layer = layer
-		return self
-
-	def setArrowSize(self, size:float=1.0):
-		self.arrow_size = mm2units(size)
-		return self
-
-	def setUnits(self, units:DipTraceDimentionUnits=DipTraceDimentionUnits.Default):
-		self.units = units
-		return self
-
-	def setShowUnits(self, state:bool=False):
-		self.show_units = 'Y' if state else 'N'
-		return self
-
-	def setVectorFont(self, state:bool=True):
-		self.vector = 'Y' if state else 'N'
-		return self
-
-	def setFont(self, name:str='Tahoma', size:int=8, scale:float=1.0, width:float=1.0):
-		self.font_name = name
-		self.font_size = size
-		self.font_scale = scale
-		self.font_width = width
-		return self
-
-	def setText(self, text:str=''):
-		self.text = text
-		return self
-
-	def setAngle(self, angle:float=0.0):
-		self.angle = angle
-		return self
-
-	def setGroup(self, group:int=-1):
-		self.group = group
-		return self
-
-	def setExternalRadius(self, radius:float=0.0):
-		self.radius = radius
-		return self
-
-	def setPointerMode(self, mode:DipTraceDimensionPointerType=DipTraceDimensionPointerType.Coordinates):
-		self.pointer_mode = mode
-		return self
-
-	def setPointD(self, x:float=0.0, y:float=0.0):
-		self.point_d = {
-			'x' : mm2units(x),
-			'y' : mm2units(y)
-		}
-		return self
-
-	def addPoint(self, x:float=0.0, y:float=0.0):
-		self.points.append({
-			'x' : mm2units(x),
-			'y' : mm2units(y)
-		})
-		return self
-
-	def addConnection(self, connected:bool=False, object:int=0, sub_object:int=0, point:int=0):
-		self.connections.append({
-			'connected'  : connected,
-			'object'     : object,
-			'sub_object' : sub_object,
-			'point'      : point
-		})
-		return self
 
 	def move(self, x:float=0.0, y:float=0.0):
 		self.point_d['x'] += mm2units(x)
@@ -167,23 +97,23 @@ class DipTraceDimension:
 
 			elif tmp := searchSingleFloatList(r'X', line):
 				id = int(tmp.group(1)) - 1
-				value = float(tmp.group(2))
-				while len(self.points) < (id + 1):
-					self.addPoint()
-				self.points[id]['x'] = value
+				if id == 1:
+					self.point_1_x = float(tmp.group(2))
+				elif id == 2:
+					self.point_2_x = float(tmp.group(2))
 
 			elif tmp := searchSingleFloatList(r'Y', line):
 				id = int(tmp.group(1)) - 1
-				value = float(tmp.group(2))
-				while len(self.points) < (id + 1):
-					self.addPoint()
-				self.points[id]['y'] = value
+				if id == 1:
+					self.point_1_y = float(tmp.group(2))
+				elif id == 2:
+					self.point_2_y = float(tmp.group(2))
 
 			elif tmp := searchSingleFloat(r'XD', line):
-				self.point_d['x'] = float(tmp.group(1))
+				self.point_d_x = float(tmp.group(1))
 
 			elif tmp := searchSingleFloat(r'YD', line):
-				self.point_d['y'] = float(tmp.group(1))
+				self.point_d_y = float(tmp.group(1))
 
 			elif tmp := searchSingleFloat(r'ArrowSize', line):
 				self.arrow_size = float(tmp.group(1))
@@ -227,23 +157,19 @@ class DipTraceDimension:
 		return self
 
 	def __str__(self) -> str:
+
+		connections = '\n'.join([str(self.connection[i]).format(i+1) for i in range(len(self.connections))])
+
 		return ''.join([
 			f'(Dimension\n',
 			f'(Enabled "{self.enabled}")\n',
 			f'(Locked "{self.locked}")\n',
 			f'(Type {self.type.value})\n',
-			f'(Connected1 {self.connections[0]["connected"]})\n'  if len(self.connections) >= 1 else '',
-			f'(Object1 {self.connections[0]["object"]})\n'        if len(self.connections) >= 1 else '',
-			f'(SubObject1 {self.connections[0]["sub_object"]})\n' if len(self.connections) >= 1 else '',
-			f'(Point1 {self.connections[0]["point"]})\n'          if len(self.connections) >= 1 else '',
-			f'(Connected2 {self.connections[1]["connected"]})\n'  if len(self.connections) >= 2 else '',
-			f'(Object2 {self.connections[1]["object"]})\n'        if len(self.connections) >= 2 else '',
-			f'(SubObject2 {self.connections[1]["sub_object"]})\n' if len(self.connections) >= 2 else '',
-			f'(Point2 {self.connections[1]["point"]})\n'          if len(self.connections) >= 2 else '',
+			f'{connections}\n',
 			f'(Layer {self.layer.value})\n',
-			f'(X1 {self.points[0]["x"]:.6g})\n(Y1 {self.points[0]["y"]:.6g})\n' if len(self.points) >= 1 else '',
-			f'(X2 {self.points[1]["x"]:.6g})\n(Y2 {self.points[1]["y"]:.6g})\n' if len(self.points) >= 2 else '',
-			f'(XD {self.point_d["x"]:.6g})\n(YD {self.point_d["y"]:.6g})\n',
+			f'(X1 {self.point_1_x:.6g})\n(Y1 {self.point_1_y:.6g})\n',
+			f'(X2 {self.point_2_x:.6g})\n(Y2 {self.point_2_y:.6g})\n',
+			f'(XD {self.point_d_x:.6g})\n(YD {self.point_d_y:.6g})\n',
 			f'(ArrowSize {self.arrow_size:.5g})\n',
 			f'(Units {self.units.value})\n',
 			f'(VectorFont "{self.vector}")\n',

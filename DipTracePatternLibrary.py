@@ -2,7 +2,8 @@
 #-*- coding: utf-8 -*-
 
 import re
-from typing import Optional
+from typing import Optional, List
+from pyfields import field
 from reHelper import searchSingleString, reJoin, reInt
 from DipTracePad import DipTracePad
 from DipTracePattern import DipTracePattern
@@ -10,16 +11,14 @@ from DipTraceIndentation import DipTraceIndentation
 
 class DipTracePatternLibrary:
 
-	def __init__(self, name:str='', hint:str=None) -> None:
+	patterns  :List[DipTracePattern] = field(default=[], doc='Patterns')
+	name      :str                   = field(default='', doc='Library name')
+	hint      :str                   = field(default='', doc='Library hint')
 
+	def __init__(self, name:str='', hint:str='') -> None:
 		self.name = name
-		self.hint = hint or name
-		self.patterns = []
+		self.hint = hint
 		super().__init__()
-
-	def addPattern(self, pattern:DipTracePattern):
-		self.patterns.append(pattern)
-		return self
 
 	def pattern(self, name:str) -> Optional[DipTracePattern]:
 		for pattern in self.patterns:
@@ -51,7 +50,7 @@ class DipTracePatternLibrary:
 						if line == ')':
 							break
 						if tmp := re.search(DipTracePattern.pattern(), line):
-							self.addPattern(DipTracePattern(match=tmp).load(datafile))
+							self.patterns.append(DipTracePattern(match=tmp).load(datafile))
 
 		return self
 
